@@ -144,7 +144,7 @@ Virtual_Drive::Virtual_Drive() : search_file(nullptr)
 	strcpy(info,"Internal Virtual Drive");
 }
 
-bool Virtual_Drive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
+bool Virtual_Drive::FileOpen(DOS_File * * file, const char * name,Bit32u flags) {
 /* Scan through the internal list of files */
 	VFILE_Block * cur_file = first_file;
 	while (cur_file) {

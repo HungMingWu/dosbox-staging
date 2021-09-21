@@ -279,7 +279,7 @@ public:
 	DOS_Drive();
 	virtual ~DOS_Drive() = default;
 
-	virtual bool FileOpen(DOS_File * * file,char * name,Bit32u flags)=0;
+	virtual bool FileOpen(DOS_File * * file, const char * name, Bit32u flags) = 0;
 	virtual bool FileCreate(DOS_File * * file, const char * name, Bit16u attributes) = 0;
 	virtual bool FileUnlink(char * _name)=0;
 	virtual bool RemoveDir(char * _dir)=0;
