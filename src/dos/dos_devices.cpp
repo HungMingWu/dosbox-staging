@@ -30,7 +30,7 @@
 #include "drives.h"
 #include "dev_con.h"
 
-DOS_Device * Devices[DOS_DEVICES];
+std::unique_ptr<DOS_Device> Devices[DOS_DEVICES];
 
 class device_NUL : public DOS_Device {
 public:
@@ -143,12 +143,12 @@ Bit8u DOS_FindDevice(char const * name) {
 }
 
 
-void DOS_AddDevice(DOS_Device * adddev) {
+void DOS_AddDevice(std::unique_ptr<DOS_Device> adddev) {
 //Caller creates the device. We store a pointer to it
 //TODO Give the Device a real handler in low memory that responds to calls
 	for(Bitu i = 0; i < DOS_DEVICES;i++) {
-		if(!Devices[i]){
-			Devices[i] = adddev;
+		if (!Devices[i]) {
+			Devices[i] = std::move(adddev);
 			Devices[i]->SetDeviceNumber(i);
 			return;
 		}
@@ -161,21 +161,14 @@ void DOS_DelDevice(DOS_Device * dev) {
 // TODO:The file table is not checked to see the device is opened somewhere!
 	for (Bitu i = 0; i <DOS_DEVICES;i++) {
 		if (Devices[i] && !strcasecmp(Devices[i]->GetName(), dev->GetName())) {
-			delete Devices[i];
-			Devices[i] = 0;
+			Devices[i].reset();
 			return;
 		}
 	}
 }
 
 void DOS_SetupDevices(void) {
-	DOS_Device * newdev;
-	newdev=new device_CON();
-	DOS_AddDevice(newdev);
-	DOS_Device * newdev2;
-	newdev2=new device_NUL();
-	DOS_AddDevice(newdev2);
-	DOS_Device * newdev3;
-	newdev3=new device_LPT1();
-	DOS_AddDevice(newdev3);
+	DOS_AddDevice(std::make_unique<device_CON>());
+	DOS_AddDevice(std::make_unique<device_NUL>());
+	DOS_AddDevice(std::make_unique<device_LPT1>());
 }

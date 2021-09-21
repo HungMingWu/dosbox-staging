@@ -1414,7 +1414,7 @@ public:
 		/* Register the ems device */
 		//TODO MAYBE put it in the class.
 		emm_device = new device_EMM(ems_type!=2);
-		DOS_AddDevice(emm_device);
+		DOS_AddDevice(std::unique_ptr<DOS_Device>(emm_device));
 
 		/* Clear handle and page tables */
 		Bitu i;
