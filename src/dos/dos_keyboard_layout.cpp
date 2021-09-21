@@ -48,7 +48,7 @@ static FILE* OpenDosboxFile(const char* name) {
 	if (DOS_MakeName(name,fullname,&drive)) {
 		try {
 			// try to open file on mounted drive first
-			ldp=dynamic_cast<localDrive*>(Drives[drive]);
+			ldp=dynamic_cast<localDrive*>(Drives[drive].get());
 			if (ldp) {
 				FILE *tmpfile=ldp->GetSystemFilePtr(fullname, "rb");
 				if (tmpfile != NULL) return tmpfile;

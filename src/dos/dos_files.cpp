@@ -44,7 +44,7 @@
 
 
 std::unique_ptr<DOS_File> Files[DOS_FILES];
-DOS_Drive * Drives[DOS_DRIVES];
+std::unique_ptr<DOS_Drive> Drives[DOS_DRIVES];
 
 Bit8u DOS_GetDefaultDrive(void) {
 //	return DOS_SDA(DOS_SDA_SEG,DOS_SDA_OFS).GetDrive();
@@ -1376,11 +1376,5 @@ bool DOS_SetFileDate(uint16_t entry, uint16_t ntime, uint16_t ndate)
 
 void DOS_SetupFiles()
 {
-	/* Setup the File Handles */
-	for (uint8_t i = 0; i < DOS_FILES; ++i)
-		Files[i] = nullptr;
-	/* Setup the Virtual Disk System */
-	for (uint8_t i = 0; i < DOS_DRIVES; ++i)
-		Drives[i] = nullptr;
-	Drives[drive_index('Z')] = new Virtual_Drive();
+	Drives[drive_index('Z')] = std::make_unique<Virtual_Drive>();
 }

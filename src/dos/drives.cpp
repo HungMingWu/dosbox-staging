@@ -148,7 +148,7 @@ void DriveManager::InitializeDrive(int drive) {
 	if (driveInfo.disks.size() > 0) {
 		driveInfo.currentDisk = 0;
 		DOS_Drive* disk = driveInfo.disks[driveInfo.currentDisk];
-		Drives[currentDrive] = disk;
+		Drives[currentDrive].reset(disk);
 		if (driveInfo.disks.size() > 1) disk->Activate();
 	}
 }
@@ -199,7 +199,7 @@ void DriveManager::CycleDisks(int drive, bool notify) {
 		// copy working directory, acquire system resources and finally switch to next drive		
 		strcpy(newDisk->curdir, oldDisk->curdir);
 		newDisk->Activate();
-		Drives[drive] = newDisk;
+		Drives[drive].reset(newDisk);
 		if (notify) LOG_MSG("Drive %c: disk %d of %d now active", 'A'+drive, currentDisk+1, numDisks);
 	}
 }
