@@ -109,7 +109,7 @@ DOS_File *FindOpenFile(const DOS_Drive *drive, const char *name)
 	return nullptr;
 }
 
-bool localDrive::FileOpen(DOS_File **file, char *name, Bit32u flags)
+bool localDrive::FileOpen(DOS_File **file, const char *name, Bit32u flags)
 {
 	const char *type = nullptr;
 	switch (flags&0xf) {
@@ -802,7 +802,7 @@ cdromDrive::cdromDrive(const char _driveLetter,
 	if (MSCDEX_GetVolumeName(subUnit,name)) dirCache.SetLabel(name,true,true);
 }
 
-bool cdromDrive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
+bool cdromDrive::FileOpen(DOS_File * * file, const char * name, Bit32u flags) {
 	if ((flags&0xf)==OPEN_READWRITE) {
 		flags &= ~static_cast<unsigned>(OPEN_READWRITE);
 	} else if ((flags&0xf)==OPEN_WRITE) {

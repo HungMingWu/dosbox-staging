@@ -56,7 +56,7 @@ private:
 class localDrive : public DOS_Drive {
 public:
 	localDrive(const char * startdir,Bit16u _bytes_sector,Bit8u _sectors_cluster,Bit16u _total_clusters,Bit16u _free_clusters,Bit8u _mediaid);
-	virtual bool FileOpen(DOS_File * * file,char * name,Bit32u flags);
+	bool FileOpen(DOS_File * * file, const char * name, Bit32u flags) override;
 	virtual FILE *GetSystemFilePtr(char const * const name, char const * const type);
 	virtual bool GetSystemFilename(char* sysName, char const * const dosName);
 	bool FileCreate(DOS_File * * file, const char * name, Bit16u attributes) override;
@@ -158,7 +158,7 @@ public:
 	fatDrive(const char * sysFilename, Bit32u bytesector, Bit32u cylsector, Bit32u headscyl, Bit32u cylinders, Bit32u startSector);
 	fatDrive(const fatDrive&) = delete; // prevent copying
 	fatDrive& operator= (const fatDrive&) = delete; // prevent assignment
-	virtual bool FileOpen(DOS_File * * file,char * name,Bit32u flags);
+	bool FileOpen(DOS_File * * file, const char * name, Bit32u flags) override;
 	bool FileCreate(DOS_File * * file, const char * name, Bit16u attributes) override;
 	virtual bool FileUnlink(char * name);
 	virtual bool RemoveDir(char * dir);
@@ -220,7 +220,7 @@ class cdromDrive final : public localDrive
 {
 public:
 	cdromDrive(const char _driveLetter, const char * startdir,Bit16u _bytes_sector,Bit8u _sectors_cluster,Bit16u _total_clusters,Bit16u _free_clusters,Bit8u _mediaid, int& error);
-	virtual bool FileOpen(DOS_File * * file,char * name,Bit32u flags);
+	bool FileOpen(DOS_File * * file, const char * name, Bit32u flags) override;
 	bool FileCreate(DOS_File * * file, const char * name, Bit16u attributes) override;
 	virtual bool FileUnlink(char * name);
 	virtual bool RemoveDir(char * dir);
@@ -318,7 +318,7 @@ class isoDrive final : public DOS_Drive {
 public:
 	isoDrive(char driveLetter, const char* device_name, Bit8u mediaid, int &error);
 	~isoDrive();
-	virtual bool FileOpen(DOS_File **file, char *name, Bit32u flags);
+	bool FileOpen(DOS_File **file, const char *name, Bit32u flags) override;
 	bool FileCreate(DOS_File **file, const char *name, Bit16u attributes) override;
 	virtual bool FileUnlink(char *name);
 	virtual bool RemoveDir(char *dir);
@@ -381,7 +381,7 @@ struct VFILE_Block;
 class Virtual_Drive final : public DOS_Drive {
 public:
 	Virtual_Drive();
-	bool FileOpen(DOS_File * * file,char * name,Bit32u flags);
+	bool FileOpen(DOS_File * * file, const char * name, Bit32u flags) override;
 	bool FileCreate(DOS_File * * file, const char * name, Bit16u attributes) override;
 	bool FileUnlink(char * name);
 	bool RemoveDir(char * dir);
