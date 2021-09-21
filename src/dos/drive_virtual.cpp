@@ -144,14 +144,14 @@ Virtual_Drive::Virtual_Drive() : search_file(nullptr)
 	strcpy(info,"Internal Virtual Drive");
 }
 
-bool Virtual_Drive::FileOpen(DOS_File * * file, const char * name,Bit32u flags) {
+bool Virtual_Drive::FileOpen(std::unique_ptr<DOS_File> &file, const char * name,Bit32u flags) {
 /* Scan through the internal list of files */
 	VFILE_Block * cur_file = first_file;
 	while (cur_file) {
 		if (strcasecmp(name,cur_file->name) == 0) {
 		/* We have a match */
-			*file = new Virtual_File(cur_file->data, cur_file->size);
-			(*file)->flags = flags;
+			file = std::make_unique<Virtual_File>(cur_file->data, cur_file->size);
+			file->flags = flags;
 			return true;
 		}
 		cur_file = cur_file->next;
@@ -159,7 +159,7 @@ bool Virtual_Drive::FileOpen(DOS_File * * file, const char * name,Bit32u flags) 
 	return false;
 }
 
-bool Virtual_Drive::FileCreate(DOS_File * * /*file*/, const char * /*name*/,Bit16u /*attributes*/) {
+bool Virtual_Drive::FileCreate(std::unique_ptr<DOS_File> &/*file*/, const char * /*name*/,Bit16u /*attributes*/) {
 	return false;
 }
 

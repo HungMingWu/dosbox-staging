@@ -967,7 +967,7 @@ Bit8u fatDrive::GetMediaByte(void) {
 }
 
 // name can be a full DOS path with filename, up-to DOS_PATHLENGTH in length
-bool fatDrive::FileCreate(DOS_File **file, const char *name, Bit16u attributes) {
+bool fatDrive::FileCreate(std::unique_ptr<DOS_File> &file, const char *name, Bit16u attributes) {
 	direntry fileEntry;
 	Bit32u dirClust, subEntry;
 	char dirName[DOS_NAMELENGTH_ASCII];
@@ -999,14 +999,15 @@ bool fatDrive::FileCreate(DOS_File **file, const char *name, Bit16u attributes) 
 
 	/* Empty file created, now lets open it */
 	/* TODO: check for read-only flag and requested write access */
-	*file = new fatFile(name, fileEntry.loFirstClust, fileEntry.entrysize, this);
-	(*file)->flags=OPEN_READWRITE;
-	((fatFile *)(*file))->dirCluster = dirClust;
-	((fatFile *)(*file))->dirIndex = subEntry;
+	auto fat_file = std::make_unique<fatFile>(name, fileEntry.loFirstClust, fileEntry.entrysize, this);
+	fat_file->flags = OPEN_READWRITE;
+	fat_file->dirCluster = dirClust;
+	fat_file->dirIndex = subEntry;
 	/* Maybe modTime and date should be used ? (crt matches findnext) */
-	((fatFile *)(*file))->time = fileEntry.crtTime;
-	((fatFile *)(*file))->date = fileEntry.crtDate;
+	fat_file->time = fileEntry.crtTime;
+	fat_file->date = fileEntry.crtDate;
 
+	file = std::move(fat_file);
 	dos.errorcode=save_errorcode;
 	return true;
 }
@@ -1020,18 +1021,19 @@ bool fatDrive::FileExists(const char *name) {
 	return found;
 }
 
-bool fatDrive::FileOpen(DOS_File **file, const char *name, Bit32u flags) {
+bool fatDrive::FileOpen(std::unique_ptr<DOS_File> &file, const char *name, Bit32u flags) {
 	direntry fileEntry;
 	Bit32u dirClust, subEntry;
 	if(!getFileDirEntry(name, &fileEntry, &dirClust, &subEntry)) return false;
 	/* TODO: check for read-only flag and requested write access */
-	*file = new fatFile(name, fileEntry.loFirstClust, fileEntry.entrysize, this);
-	(*file)->flags = flags;
-	((fatFile *)(*file))->dirCluster = dirClust;
-	((fatFile *)(*file))->dirIndex = subEntry;
+	auto fat_file = std::make_unique<fatFile>(name, fileEntry.loFirstClust, fileEntry.entrysize, this);
+	fat_file->flags = flags;
+	fat_file->dirCluster = dirClust;
+	fat_file->dirIndex = subEntry;
 	/* Maybe modTime and date should be used ? (crt matches findnext) */
-	((fatFile *)(*file))->time = fileEntry.crtTime;
-	((fatFile *)(*file))->date = fileEntry.crtDate;
+	fat_file->time = fileEntry.crtTime;
+	fat_file->date = fileEntry.crtDate;
+	file = std::move(fat_file);
 	return true;
 }
 

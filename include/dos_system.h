@@ -21,6 +21,7 @@
 
 #include "dosbox.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -279,8 +280,8 @@ public:
 	DOS_Drive();
 	virtual ~DOS_Drive() = default;
 
-	virtual bool FileOpen(DOS_File * * file, const char * name, Bit32u flags) = 0;
-	virtual bool FileCreate(DOS_File * * file, const char * name, Bit16u attributes) = 0;
+	virtual bool FileOpen(std::unique_ptr<DOS_File> &file, const char * name, Bit32u flags) = 0;
+	virtual bool FileCreate(std::unique_ptr<DOS_File> &file, const char * name, Bit16u attributes) = 0;
 	virtual bool FileUnlink(char * _name)=0;
 	virtual bool RemoveDir(char * _dir)=0;
 	virtual bool MakeDir(char * _dir)=0;

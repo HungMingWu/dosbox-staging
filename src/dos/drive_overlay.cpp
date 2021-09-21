@@ -291,15 +291,12 @@ bool OverlayFile::create_copy() {
 
 
 
-static OverlayFile* ccc(DOS_File* file) {
-	localFile* l = dynamic_cast<localFile*>(file);
-	if (!l) E_Exit("overlay input file is not a localFile");
+static std::unique_ptr<OverlayFile> ccc(localFile &file) {
 	//Create an overlayFile
-	OverlayFile *ret = new OverlayFile(l->GetName(), l->fhandle,
-	                                   l->GetBaseDir());
-	ret->flags = l->flags;
-	ret->refCtr = l->refCtr;
-	delete l;
+	auto ret = std::make_unique<OverlayFile>(file.GetName(), file.fhandle,
+	                                   file.GetBaseDir());
+	ret->flags = file.flags;
+	ret->refCtr = file.refCtr;
 	return ret;
 }
 
@@ -406,7 +403,8 @@ void Overlay_Drive::convert_overlay_to_DOSname_in_base(char* dirname )
 	}
 }
 
-bool Overlay_Drive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
+bool Overlay_Drive::FileOpen(std::unique_ptr<DOS_File> &file, const char *name, Bit32u flags)
+{
 	const char* type;
 	switch (flags&0xf) {
 	case OPEN_READ:        type = "rb" ; break;
@@ -428,7 +426,7 @@ bool Overlay_Drive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 	}
 	for (uint8_t i = 0; i < DOS_FILES; ++i) {
 		if (Files[i] && Files[i]->IsOpen() && Files[i]->GetDrive()==drive && Files[i]->IsName(name)) {
-			localFile *lfp = dynamic_cast<localFile *>(Files[i]);
+			localFile *lfp = dynamic_cast<localFile *>(Files[i].get());
 			if (lfp) lfp->Flush();
 		}
 	}
@@ -443,10 +441,11 @@ bool Overlay_Drive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 
 	FILE * hand = fopen_wrap(newname,type);
 	bool fileopened = false;
+	std::unique_ptr<localFile> local_file;
 	if (hand) {
 		if (logoverlay) LOG_MSG("overlay file opened %s",newname);
-		*file = new localFile(name, hand, overlaydir);
-		(*file)->flags=flags;
+		local_file = std::make_unique<localFile>(name, hand, overlaydir);
+		local_file->flags=flags;
 		fileopened = true;
 	} else {
 		; //TODO error handling!!!! (maybe check if it exists and read only (should not happen with overlays)
@@ -462,16 +461,16 @@ bool Overlay_Drive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 	if (fileopened) {
 		if (logoverlay) LOG_MSG("file opened %s",name);
 		//Convert file to OverlayFile
-		OverlayFile* f = ccc(*file);
+		auto f = ccc(*local_file);
 		f->flags = flags; //ccc copies the flags of the localfile, which were not correct in this case
 		f->overlay_active = overlayed; //No need to switch if already in overlayed.
-		*file = f;
+		file = std::move(f);
 	}
 	return fileopened;
 }
 
 
-bool Overlay_Drive::FileCreate(DOS_File * * file,char * name,Bit16u /*attributes*/) {
+bool Overlay_Drive::FileCreate(std::unique_ptr<DOS_File> &file, const char * name,Bit16u /*attributes*/) {
 	//TODO Check if it exists in the dirCache ? // fix addentry ?  or just double check (ld and overlay)
 	//AddEntry looks sound to me.. 
 	
@@ -483,12 +482,12 @@ bool Overlay_Drive::FileCreate(DOS_File * * file,char * name,Bit16u /*attributes
 		if (logoverlay) LOG_MSG("File creation in overlay system failed %s",name);
 		return false;
 	}
-	*file = new localFile(name, f, overlaydir);
-	(*file)->flags = OPEN_READWRITE;
-	OverlayFile* of = ccc(*file);
+	localFile local_file(name, f, overlaydir);
+	local_file.flags = OPEN_READWRITE;
+	auto of = ccc(local_file);
 	of->overlay_active = true;
 	of->flags = OPEN_READWRITE;
-	*file = of;
+	file = std::move(of);
 	//create fake name for the drive cache
 	char fakename[CROSS_LEN];
 	safe_strcpy(fakename, overlaydir);

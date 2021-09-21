@@ -46,7 +46,7 @@
 #include "cross.h"
 #include "inout.h"
 
-bool localDrive::FileCreate(DOS_File * * file, const char * name,Bit16u /*attributes*/) {
+bool localDrive::FileCreate(std::unique_ptr<DOS_File> &file, const char * name,Bit16u /*attributes*/) {
 //TODO Maybe care for attributes but not likely
 	char newname[CROSS_LEN];
 	safe_strcpy(newname, basedir);
@@ -71,8 +71,8 @@ bool localDrive::FileCreate(DOS_File * * file, const char * name,Bit16u /*attrib
    
 	if (!existing_file) dirCache.AddEntry(newname, true);
 	/* Make the 16 bit device information */
-	*file = new localFile(name, hand, basedir);
-	(*file)->flags=OPEN_READWRITE;
+	file = std::make_unique<localFile>(name, hand, basedir);
+	file->flags=OPEN_READWRITE;
 
 	return true;
 }
@@ -102,14 +102,14 @@ DOS_File *FindOpenFile(const DOS_Drive *drive, const char *name)
 		return nullptr;
 
 	// Look for a matching open filename on the same mount
-	for (auto *file : Files)
+	for (auto &file : Files)
 		if (file && file->IsOpen() && file->GetDrive() == drive_num && file->IsName(name))
-			return file; // drive + file path is unique
+			return file.get(); // drive + file path is unique
 
 	return nullptr;
 }
 
-bool localDrive::FileOpen(DOS_File **file, const char *name, Bit32u flags)
+bool localDrive::FileOpen(std::unique_ptr<DOS_File> &file, const char *name, Bit32u flags)
 {
 	const char *type = nullptr;
 	switch (flags&0xf) {
@@ -190,8 +190,8 @@ bool localDrive::FileOpen(DOS_File **file, const char *name, Bit32u flags)
 #endif
 
 	if (fhandle) {
-		*file = new localFile(name, fhandle, basedir);
-		(*file)->flags = flags;  // for the inheritance flag and maybe check for others.
+		file = std::make_unique<localFile>(name, fhandle, basedir);
+		file->flags = flags;  // for the inheritance flag and maybe check for others.
 	} else {
 		// Otherwise we really can't open the file.
 		DOS_SetError(DOSERR_INVALID_HANDLE);
@@ -802,7 +802,7 @@ cdromDrive::cdromDrive(const char _driveLetter,
 	if (MSCDEX_GetVolumeName(subUnit,name)) dirCache.SetLabel(name,true,true);
 }
 
-bool cdromDrive::FileOpen(DOS_File * * file, const char * name, Bit32u flags) {
+bool cdromDrive::FileOpen(std::unique_ptr<DOS_File> &file, const char * name, Bit32u flags) {
 	if ((flags&0xf)==OPEN_READWRITE) {
 		flags &= ~static_cast<unsigned>(OPEN_READWRITE);
 	} else if ((flags&0xf)==OPEN_WRITE) {
@@ -811,11 +811,11 @@ bool cdromDrive::FileOpen(DOS_File * * file, const char * name, Bit32u flags) {
 	}
 	bool success = localDrive::FileOpen(file, name, flags);
 	if (success)
-		(*file)->SetFlagReadOnlyMedium();
+		file->SetFlagReadOnlyMedium();
 	return success;
 }
 
-bool cdromDrive::FileCreate(DOS_File * * /*file*/, const char * /*name*/,Bit16u /*attributes*/) {
+bool cdromDrive::FileCreate(std::unique_ptr<DOS_File> &/*file*/, const char * /*name*/,Bit16u /*attributes*/) {
 	DOS_SetError(DOSERR_ACCESS_DENIED);
 	return false;
 }

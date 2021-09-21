@@ -94,7 +94,7 @@ enum { RETURN_EXIT=0,RETURN_CTRLC=1,RETURN_ABORT=2,RETURN_TSR=3};
 
 /* internal Dos Tables */
 
-extern DOS_File * Files[DOS_FILES];
+extern std::unique_ptr<DOS_File> Files[DOS_FILES];
 extern DOS_Drive * Drives[DOS_DRIVES];
 extern DOS_Device * Devices[DOS_DEVICES];
 
