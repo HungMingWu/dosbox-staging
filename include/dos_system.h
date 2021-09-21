@@ -328,7 +328,7 @@ void DOS_AddMultiplexHandler(MultiplexHandler * handler);
 void DOS_DelMultiplexHandler(MultiplexHandler * handler);
 
 /* AddDevice stores the pointer to a created device */
-void DOS_AddDevice(DOS_Device * adddev);
+void DOS_AddDevice(std::unique_ptr<DOS_Device> adddev);
 /* DelDevice destroys the device that is pointed to. */
 void DOS_DelDevice(DOS_Device * dev);
 

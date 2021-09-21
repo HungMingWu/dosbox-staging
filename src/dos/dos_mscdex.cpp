@@ -1381,8 +1381,7 @@ void MSCDEX_Init(Section* sec) {
 	// AddDestroy func
 	sec->AddDestroyFunction(&MSCDEX_ShutDown);
 	/* Register the mscdex device */
-	DOS_Device * newdev = new device_MSCDEX();
-	DOS_AddDevice(newdev);
+	DOS_AddDevice(std::make_unique<device_MSCDEX>());
 	curReqheaderPtr = 0;
 	/* Add Multiplexer */
 	DOS_AddMultiplexHandler(MSCDEX_Handler);

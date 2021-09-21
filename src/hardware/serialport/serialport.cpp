@@ -1167,7 +1167,7 @@ CSerial::CSerial(const uint8_t port_idx, CommandLine *cmd)
 	txfifo = new MyFifo(fifosize);
 
 	mydosdevice=new device_COM(this);
-	DOS_AddDevice(mydosdevice);
+	DOS_AddDevice(std::unique_ptr<DOS_Device>(mydosdevice));
 
 	errormsg_pending=false;
 	framingErrors=0;
