@@ -159,7 +159,7 @@ bool Virtual_Drive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 	return false;
 }
 
-bool Virtual_Drive::FileCreate(DOS_File * * /*file*/,char * /*name*/,Bit16u /*attributes*/) {
+bool Virtual_Drive::FileCreate(DOS_File * * /*file*/, const char * /*name*/,Bit16u /*attributes*/) {
 	return false;
 }
 
