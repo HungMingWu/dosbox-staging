@@ -185,7 +185,7 @@ void IMGMOUNT::Run(void) {
                     return;
                 }
 
-                localDrive *ldp = dynamic_cast<localDrive*>(Drives[dummy]);
+                localDrive *ldp = dynamic_cast<localDrive*>(Drives[dummy].get());
                 if (ldp==NULL) {
                     WriteOut(MSG_Get("PROGRAM_IMGMOUNT_FILE_NOT_FOUND"));
                     return;

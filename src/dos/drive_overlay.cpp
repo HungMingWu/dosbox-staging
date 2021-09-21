@@ -270,7 +270,7 @@ bool OverlayFile::create_copy() {
 	FILE* newhandle = NULL;
 	Bit8u drive_set = GetDrive();
 	if (drive_set != 0xff && drive_set < DOS_DRIVES && Drives[drive_set]){
-		Overlay_Drive* od = dynamic_cast<Overlay_Drive*>(Drives[drive_set]);
+		Overlay_Drive* od = dynamic_cast<Overlay_Drive*>(Drives[drive_set].get());
 		if (od) {
 			newhandle = od->create_file_in_overlay(GetName(),"wb+"); //todo check wb+
 		}
@@ -419,7 +419,7 @@ bool Overlay_Drive::FileOpen(std::unique_ptr<DOS_File> &file, const char *name, 
 	//Flush the buffer of handles for the same file. (Betrayal in Antara)
 	uint8_t drive = DOS_DRIVES;
 	for (uint8_t i = 0; i < DOS_DRIVES; ++i) {
-		if (Drives[i]==this) {
+		if (Drives[i].get() == this) {
 			drive=i;
 			break;
 		}

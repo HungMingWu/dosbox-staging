@@ -50,8 +50,7 @@ void MOUNT::Move_Z(char new_z)
 	if (new_idx < DOS_DRIVES - 1) {
 		ZDRIVE_NUM = new_idx;
 		/* remap drives */
-		Drives[new_idx] = Drives[25];
-		Drives[25] = 0;
+		Drives[new_idx] = std::move(Drives[25]);
 		if (!first_shell) return; //Should not be possible
 		/* Update environment */
 		std::string line = "";
@@ -327,9 +326,9 @@ void MOUNT::Run(void) {
 #endif
 			if (type == "overlay") {
 				localDrive *ldp = dynamic_cast<localDrive *>(
-						Drives[drive_index(drive)]);
+						Drives[drive_index(drive)].get());
 				cdromDrive *cdp = dynamic_cast<cdromDrive *>(
-						Drives[drive_index(drive)]);
+						Drives[drive_index(drive)].get());
 				if (!ldp || cdp) {
 					WriteOut(MSG_Get("PROGRAM_MOUNT_OVERLAY_INCOMPAT_BASE"));
 					return;
@@ -350,9 +349,6 @@ void MOUNT::Run(void) {
 					safe_strcpy(newdrive->curdir,
 								ldp->curdir);
 				}
-
-				delete Drives[drive_index(drive)];
-				Drives[drive_index(drive)] = nullptr;
 			} else {
 				newdrive = new localDrive(temp_line.c_str(),sizes[0],bit8size,sizes[2],sizes[3],mediaid);
 			}
@@ -361,7 +357,7 @@ void MOUNT::Run(void) {
 		WriteOut(MSG_Get("PROGRAM_MOUNT_ILL_TYPE"),type.c_str());
 		return;
 	}
-	Drives[drive_index(drive)] = newdrive;
+	Drives[drive_index(drive)].reset(newdrive);
 	/* Set the correct media byte in the table */
 	mem_writeb(Real2Phys(dos.tables.mediaid) + (drive_index(drive)) * 9,
 				newdrive->GetMediaByte());

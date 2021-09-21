@@ -93,7 +93,7 @@ DOS_File *FindOpenFile(const DOS_Drive *drive, const char *name)
 	uint8_t drive_num = DOS_DRIVES; // default out range
 	// Look for a matching drive mount
 	for (uint8_t i = 0; i < DOS_DRIVES; ++i) {
-		if (Drives[i] && Drives[i] == drive) {
+		if (Drives[i] && Drives[i].get() == drive) {
 			drive_num = i;
 			break;
 		}

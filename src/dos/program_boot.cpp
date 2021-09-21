@@ -44,7 +44,7 @@ FILE* BOOT::getFSFile_mounted(char const* filename, Bit32u *ksize, Bit32u *bsize
     if (!DOS_MakeName(const_cast<char*>(filename),fullname,&drive)) return NULL;
 
     try {
-        ldp=dynamic_cast<localDrive*>(Drives[drive]);
+        ldp=dynamic_cast<localDrive*>(Drives[drive].get());
         if (!ldp) return NULL;
 
         tmpfile = ldp->GetSystemFilePtr(fullname, "rb");

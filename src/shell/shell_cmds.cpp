@@ -1507,7 +1507,7 @@ void DOS_Shell::CMD_SUBST (char * args) {
    		Bit8u drive;char fulldir[DOS_PATHLENGTH];
 		if (!DOS_MakeName(const_cast<char*>(arg.c_str()),fulldir,&drive)) throw 0;
 
-		if ( ( ldp=dynamic_cast<localDrive*>(Drives[drive])) == 0 ) throw 0;
+		if ( ( ldp=dynamic_cast<localDrive*>(Drives[drive].get())) == 0 ) throw 0;
 		char newname[CROSS_LEN];
 		safe_strcpy(newname, ldp->GetBasedir());
 		strcat(newname,fulldir);

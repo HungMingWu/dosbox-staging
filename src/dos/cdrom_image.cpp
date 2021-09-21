@@ -1375,7 +1375,7 @@ bool CDROM_Interface_Image::GetRealFileName(string &filename, string &pathname)
 		return false;
 	}
 
-	localDrive *ldp = dynamic_cast<localDrive*>(Drives[drive]);
+	localDrive *ldp = dynamic_cast<localDrive*>(Drives[drive].get());
 	if (ldp) {
 		ldp->GetSystemFilename(tmp, fullname);
 		if (path_exists(tmp)) {
