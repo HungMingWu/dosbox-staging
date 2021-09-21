@@ -209,7 +209,7 @@ void isoDrive::Activate(void) {
 	UpdateMscdex(driveLetter, fileName, subUnit);
 }
 
-bool isoDrive::FileOpen(DOS_File **file, const char *name, Bit32u flags) {
+bool isoDrive::FileOpen(std::unique_ptr<DOS_File> &file, const char *name, Bit32u flags) {
 	if ((flags & 0x0f) == OPEN_WRITE) {
 		DOS_SetError(DOSERR_ACCESS_DENIED);
 		return false;
@@ -224,13 +224,13 @@ bool isoDrive::FileOpen(DOS_File **file, const char *name, Bit32u flags) {
 		file_stat.attr = DOS_ATTR_ARCHIVE | DOS_ATTR_READ_ONLY;
 		file_stat.date = DOS_PackDate(1900 + de.dateYear, de.dateMonth, de.dateDay);
 		file_stat.time = DOS_PackTime(de.timeHour, de.timeMin, de.timeSec);
-		*file = new isoFile(this, name, &file_stat, EXTENT_LOCATION(de) * ISO_FRAMESIZE);
-		(*file)->flags = flags;
+		file = std::make_unique<isoFile>(this, name, &file_stat, EXTENT_LOCATION(de) * ISO_FRAMESIZE);
+		file->flags = flags;
 	}
 	return success;
 }
 
-bool isoDrive::FileCreate(DOS_File** /*file*/, const char* /*name*/, Bit16u /*attributes*/) {
+bool isoDrive::FileCreate(std::unique_ptr<DOS_File> &/*file*/, const char* /*name*/, Bit16u /*attributes*/) {
 	DOS_SetError(DOSERR_ACCESS_DENIED);
 	return false;
 }

@@ -56,10 +56,10 @@ private:
 class localDrive : public DOS_Drive {
 public:
 	localDrive(const char * startdir,Bit16u _bytes_sector,Bit8u _sectors_cluster,Bit16u _total_clusters,Bit16u _free_clusters,Bit8u _mediaid);
-	bool FileOpen(DOS_File * * file, const char * name, Bit32u flags) override;
+	bool FileOpen(std::unique_ptr<DOS_File> &file, const char * name, Bit32u flags) override;
 	virtual FILE *GetSystemFilePtr(char const * const name, char const * const type);
 	virtual bool GetSystemFilename(char* sysName, char const * const dosName);
-	bool FileCreate(DOS_File * * file, const char * name, Bit16u attributes) override;
+	bool FileCreate(std::unique_ptr<DOS_File> &file, const char * name, Bit16u attributes) override;
 	virtual bool FileUnlink(char * name);
 	virtual bool RemoveDir(char * dir);
 	virtual bool MakeDir(char * dir);
@@ -158,8 +158,8 @@ public:
 	fatDrive(const char * sysFilename, Bit32u bytesector, Bit32u cylsector, Bit32u headscyl, Bit32u cylinders, Bit32u startSector);
 	fatDrive(const fatDrive&) = delete; // prevent copying
 	fatDrive& operator= (const fatDrive&) = delete; // prevent assignment
-	bool FileOpen(DOS_File * * file, const char * name, Bit32u flags) override;
-	bool FileCreate(DOS_File * * file, const char * name, Bit16u attributes) override;
+	bool FileOpen(std::unique_ptr<DOS_File> &file, const char * name, Bit32u flags) override;
+	bool FileCreate(std::unique_ptr<DOS_File> &file, const char * name, Bit16u attributes) override;
 	virtual bool FileUnlink(char * name);
 	virtual bool RemoveDir(char * dir);
 	virtual bool MakeDir(char * dir);
@@ -220,8 +220,8 @@ class cdromDrive final : public localDrive
 {
 public:
 	cdromDrive(const char _driveLetter, const char * startdir,Bit16u _bytes_sector,Bit8u _sectors_cluster,Bit16u _total_clusters,Bit16u _free_clusters,Bit8u _mediaid, int& error);
-	bool FileOpen(DOS_File * * file, const char * name, Bit32u flags) override;
-	bool FileCreate(DOS_File * * file, const char * name, Bit16u attributes) override;
+	bool FileOpen(std::unique_ptr<DOS_File> &file, const char * name, Bit32u flags) override;
+	bool FileCreate(std::unique_ptr<DOS_File> &file, const char * name, Bit16u attributes) override;
 	virtual bool FileUnlink(char * name);
 	virtual bool RemoveDir(char * dir);
 	virtual bool MakeDir(char * dir);
@@ -318,8 +318,8 @@ class isoDrive final : public DOS_Drive {
 public:
 	isoDrive(char driveLetter, const char* device_name, Bit8u mediaid, int &error);
 	~isoDrive();
-	bool FileOpen(DOS_File **file, const char *name, Bit32u flags) override;
-	bool FileCreate(DOS_File **file, const char *name, Bit16u attributes) override;
+	bool FileOpen(std::unique_ptr<DOS_File> &file, const char *name, Bit32u flags) override;
+	bool FileCreate(std::unique_ptr<DOS_File> &file, const char *name, Bit16u attributes) override;
 	virtual bool FileUnlink(char *name);
 	virtual bool RemoveDir(char *dir);
 	virtual bool MakeDir(char *dir);
@@ -381,8 +381,8 @@ struct VFILE_Block;
 class Virtual_Drive final : public DOS_Drive {
 public:
 	Virtual_Drive();
-	bool FileOpen(DOS_File * * file, const char * name, Bit32u flags) override;
-	bool FileCreate(DOS_File * * file, const char * name, Bit16u attributes) override;
+	bool FileOpen(std::unique_ptr<DOS_File> &file, const char * name, Bit32u flags) override;
+	bool FileCreate(std::unique_ptr<DOS_File> &file, const char * name, Bit16u attributes) override;
 	bool FileUnlink(char * name);
 	bool RemoveDir(char * dir);
 	bool MakeDir(char * dir);
@@ -417,8 +417,8 @@ public:
 	              uint8_t _mediaid,
 	              uint8_t &error);
 
-	virtual bool FileOpen(DOS_File **file, char *name, uint32_t flags);
-	virtual bool FileCreate(DOS_File * * file,char * name,Bit16u /*attributes*/);
+	bool FileOpen(std::unique_ptr<DOS_File> &file, const char *name, uint32_t flags) override;
+	bool FileCreate(std::unique_ptr<DOS_File> &file, const char * name, Bit16u /*attributes*/) override;
 	virtual bool FindFirst(char * _dir,DOS_DTA & dta,bool fcb_findfirst);
 	virtual bool FindNext(DOS_DTA & dta);
 	virtual bool FileUnlink(char * name);

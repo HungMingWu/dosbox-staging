@@ -85,7 +85,7 @@ bool DOS_IOCTL(void) {
 			/* is character device with IOCTL support */
 			PhysPt bufptr=PhysMake(SegValue(ds),reg_dx);
 			Bit16u retcode=0;
-			if (((DOS_Device*)(Files[handle]))->ReadFromControlChannel(bufptr,reg_cx,&retcode)) {
+			if (((DOS_Device*)(Files[handle].get()))->ReadFromControlChannel(bufptr,reg_cx,&retcode)) {
 				reg_ax=retcode;
 				return true;
 			}
@@ -97,7 +97,7 @@ bool DOS_IOCTL(void) {
 			/* is character device with IOCTL support */
 			PhysPt bufptr=PhysMake(SegValue(ds),reg_dx);
 			Bit16u retcode=0;
-			if (((DOS_Device*)(Files[handle]))->WriteToControlChannel(bufptr,reg_cx,&retcode)) {
+			if (((DOS_Device*)(Files[handle].get()))->WriteToControlChannel(bufptr,reg_cx,&retcode)) {
 				reg_ax=retcode;
 				return true;
 			}

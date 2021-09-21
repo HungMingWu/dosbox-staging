@@ -43,7 +43,7 @@
 #define FCB_ERR_WRITE   1
 
 
-DOS_File * Files[DOS_FILES];
+std::unique_ptr<DOS_File> Files[DOS_FILES];
 DOS_Drive * Drives[DOS_DRIVES];
 
 Bit8u DOS_GetDefaultDrive(void) {
@@ -459,8 +459,7 @@ bool DOS_CloseFile(Bit16u entry, bool fcb, Bit8u * refcnt) {
 
 	Bits refs=Files[handle]->RemoveRef();
 	if (refs<=0) {
-		delete Files[handle];
-		Files[handle]=0;
+		Files[handle].reset();
 		refs=0;
 	}
 	if (refcnt!=NULL) *refcnt=static_cast<Bit8u>(refs+1);
@@ -520,7 +519,7 @@ bool DOS_CreateFile(char const * name,Bit16u attributes,Bit16u * entry,bool fcb)
 		DOS_SetError(DOSERR_ACCESS_DENIED);
 		return false;
 	}
-	bool foundit=Drives[drive]->FileCreate(&Files[handle],fullname,attributes);
+	bool foundit=Drives[drive]->FileCreate(Files[handle],fullname,attributes);
 	if (foundit) { 
 		Files[handle]->SetDrive(drive);
 		Files[handle]->AddRef();
@@ -578,9 +577,9 @@ bool DOS_OpenFile(char const * name,Bit8u flags,Bit16u * entry,bool fcb) {
 	}
 	bool exists=false;
 	if (device) {
-		Files[handle]=new DOS_Device(*Devices[devnum]);
+		Files[handle] = std::make_unique<DOS_Device>(*Devices[devnum]);
 	} else {
-		exists=Drives[drive]->FileOpen(&Files[handle],fullname,flags);
+		exists = Drives[drive]->FileOpen(Files[handle],fullname,flags);
 		if (exists) Files[handle]->SetDrive(drive);
 	}
 	if (exists || device ) { 
