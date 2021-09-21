@@ -20,6 +20,7 @@
 
 #include <string.h>
 #include <ctype.h>
+#include <vector>
 
 #include "cpu.h"
 #include "callback.h"
@@ -312,13 +313,12 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 			if (imagesize+headersize<512) imagesize = 512-headersize;
 		}
 	}
-	uint8_t *loadbuf = new uint8_t[0x10000];
+	std::vector<uint8_t> loadbuf(0x10000);
 	if (flags!=OVERLAY) {
 		/* Create an environment block */
 		envseg=block.exec.envseg;
 		if (!MakeEnv(name,&envseg)) {
 			DOS_CloseFile(fhandle);
-			delete [] loadbuf;
 			return false;
 		}
 		/* Get Memory */		
@@ -329,7 +329,7 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 				/* try to load file into memory below 96k */ 
 				pos=0;DOS_SeekFile(fhandle,&pos,DOS_SEEK_SET);	
 				Bit16u dataread=0x1800;
-				DOS_ReadFile(fhandle,loadbuf,&dataread);
+				DOS_ReadFile(fhandle,loadbuf.data(),&dataread);
 				if (dataread<0x1800) maxsize=dataread;
 				if (minsize>maxsize) minsize=maxsize;
 			}
@@ -343,14 +343,13 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 				/* Reduce minimum of needed memory size to filesize */
 				pos=0;DOS_SeekFile(fhandle,&pos,DOS_SEEK_SET);	
 				Bit16u dataread=0xf800;
-				DOS_ReadFile(fhandle,loadbuf,&dataread);
+				DOS_ReadFile(fhandle,loadbuf.data(),&dataread);
 				if (dataread<0xf800) minsize=((dataread+0x10)>>4)+0x20;
 			}
 			if (maxfree<minsize) {
 				DOS_CloseFile(fhandle);
 				DOS_SetError(DOSERR_INSUFFICIENT_MEMORY);
 				DOS_FreeMemory(envseg);
-				delete [] loadbuf;
 				return false;
 			}
 		}
@@ -375,19 +374,19 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 	if (iscom) {	/* COM Load 64k - 256 bytes max */
 		pos=0;DOS_SeekFile(fhandle,&pos,DOS_SEEK_SET);	
 		readsize=0xffff-256;
-		DOS_ReadFile(fhandle,loadbuf,&readsize);
-		MEM_BlockWrite(loadaddress,loadbuf,readsize);
+		DOS_ReadFile(fhandle,loadbuf.data(),&readsize);
+		MEM_BlockWrite(loadaddress,loadbuf.data(),readsize);
 	} else {	/* EXE Load in 32kb blocks and then relocate */
 		pos=headersize;DOS_SeekFile(fhandle,&pos,DOS_SEEK_SET);	
 		while (imagesize>0x7FFF) {
-			readsize=0x8000;DOS_ReadFile(fhandle,loadbuf,&readsize);
-			MEM_BlockWrite(loadaddress,loadbuf,readsize);
+			readsize=0x8000;DOS_ReadFile(fhandle, loadbuf.data(),&readsize);
+			MEM_BlockWrite(loadaddress, loadbuf.data(),readsize);
 //			if (readsize!=0x8000) LOG(LOG_EXEC,LOG_NORMAL)("Illegal header");
 			loadaddress+=0x8000;imagesize-=0x8000;
 		}
 		if (imagesize>0) {
-			readsize=(Bit16u)imagesize;DOS_ReadFile(fhandle,loadbuf,&readsize);
-			MEM_BlockWrite(loadaddress,loadbuf,readsize);
+			readsize=(Bit16u)imagesize;DOS_ReadFile(fhandle,loadbuf.data(),&readsize);
+			MEM_BlockWrite(loadaddress,loadbuf.data(),readsize);
 //			if (readsize!=imagesize) LOG(LOG_EXEC,LOG_NORMAL)("Illegal header");
 		}
 		/* Relocate the exe image */
@@ -402,7 +401,6 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 			mem_writew(address,mem_readw(address)+relocate);
 		}
 	}
-	delete [] loadbuf;
 	DOS_CloseFile(fhandle);
 
 	/* Setup a psp */
