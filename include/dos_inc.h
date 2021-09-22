@@ -25,6 +25,7 @@
 #include "dosbox.h"
 
 #include <cstddef>
+#include <string>
 #include <type_traits>
 
 #include "dos_system.h"
@@ -148,7 +149,7 @@ MakeNameResult DOS_MakeName(char const *const name);
 Bit8u DOS_GetDefaultDrive(void);
 void DOS_SetDefaultDrive(Bit8u drive);
 bool DOS_SetDrive(Bit8u drive);
-bool DOS_GetCurrentDir(Bit8u drive,char * const buffer);
+std::string DOS_GetCurrentDir(Bit8u drive);
 bool DOS_ChangeDir(char const * const dir);
 bool DOS_MakeDir(char const * const dir);
 bool DOS_RemoveDir(char const * const dir);

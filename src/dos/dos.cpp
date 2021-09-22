@@ -159,7 +159,8 @@ static Bitu DOS_21Handler(void) {
 
 	char name1[DOSNAMEBUF+2+DOS_NAMELENGTH_ASCII];
 	char name2[DOSNAMEBUF+2+DOS_NAMELENGTH_ASCII];
-	
+	std::string name3;
+
 	static Bitu time_start = 0; //For emulating temporary time changes.
 
 	switch (reg_ah) {
@@ -799,8 +800,9 @@ static Bitu DOS_21Handler(void) {
 		}
 		break;
 	case 0x47:					/* CWD Get current directory */
-		if (DOS_GetCurrentDir(reg_dl,name1)) {
-			MEM_BlockWrite(SegPhys(ds)+reg_si,name1,(Bitu)(safe_strlen(name1)+1));	
+		name3 = DOS_GetCurrentDir(reg_dl);
+		if (!name3.empty()) {
+			MEM_BlockWrite(SegPhys(ds)+reg_si,name3.c_str(),(Bitu)(name3.length()+1));
 			reg_ax=0x0100;
 			CALLBACK_SCF(false);
 		} else {
