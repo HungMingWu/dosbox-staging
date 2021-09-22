@@ -375,14 +375,15 @@ void DOS_Shell::CMD_CHDIR(char * args) {
 	HELP("CHDIR");
 	StripSpaces(args);
 	Bit8u drive = DOS_GetDefaultDrive()+'A';
-	char dir[DOS_PATHLENGTH];
+	std::string dir;
 	if (!*args) {
-		DOS_GetCurrentDir(0,dir);
-		WriteOut("%c:\\%s\n",drive,dir);
+		dir = DOS_GetCurrentDir(0);
+		WriteOut("%c:\\%s\n",drive, dir.c_str());
 	} else if (strlen(args) == 2 && args[1] == ':') {
 		Bit8u targetdrive = (args[0] | 0x20) - 'a' + 1;
 		unsigned char targetdisplay = *reinterpret_cast<unsigned char*>(&args[0]);
-		if (!DOS_GetCurrentDir(targetdrive,dir)) {
+		dir = DOS_GetCurrentDir(targetdrive);
+		if (dir.empty()) {
 			if (drive == 'Z') {
 				WriteOut(MSG_Get("SHELL_EXECUTE_DRIVE_NOT_FOUND"),toupper(targetdisplay));
 			} else {
@@ -390,7 +391,7 @@ void DOS_Shell::CMD_CHDIR(char * args) {
 			}
 			return;
 		}
-		WriteOut("%c:\\%s\n",toupper(targetdisplay),dir);
+		WriteOut("%c:\\%s\n",toupper(targetdisplay),dir.c_str());
 		if (drive == 'Z')
 			WriteOut(MSG_Get("SHELL_CMD_CHDIR_HINT"),toupper(targetdisplay));
 	} else 	if (!DOS_ChangeDir(args)) {

@@ -37,12 +37,10 @@ DOS_Shell::~DOS_Shell() {
 }
 
 void DOS_Shell::ShowPrompt(void) {
-	Bit8u drive=DOS_GetDefaultDrive()+'A';
-	char dir[DOS_PATHLENGTH];
-	dir[0] = 0; //DOS_GetCurrentDir doesn't always return something. (if drive is messed up)
-	DOS_GetCurrentDir(0,dir);
+	Bit8u drive = DOS_GetDefaultDrive()+'A';
+	auto dir = DOS_GetCurrentDir(0);
 	InjectMissingNewline();
-	WriteOut("%c:\\%s>", drive, dir);
+	WriteOut("%c:\\%s>", drive, dir.c_str());
 	ResetLastWrittenChar('\n'); // prevents excessive newline if cmd prints nothing
 }
 

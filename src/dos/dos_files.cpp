@@ -201,15 +201,14 @@ MakeNameResult DOS_MakeName(char const * const name) {
 	return result;
 }
 
-bool DOS_GetCurrentDir(Bit8u drive,char * const buffer) {
-	if (drive==0) drive=DOS_GetDefaultDrive();
+std::string DOS_GetCurrentDir(Bit8u drive) {
+	if (drive==0) drive = DOS_GetDefaultDrive();
 	else drive--;
 	if ((drive>=DOS_DRIVES) || (!Drives[drive])) {
 		DOS_SetError(DOSERR_INVALID_DRIVE);
-		return false;
+		return {};
 	}
-	strcpy(buffer,Drives[drive]->curdir);
-	return true;
+	return std::string(Drives[drive]->curdir);
 }
 
 bool DOS_ChangeDir(char const * const dir) {
@@ -267,9 +266,8 @@ bool DOS_RemoveDir(char const * const dir) {
 		return false;
 	}
 	/* See if it's current directory */
-	char currdir[DOS_PATHLENGTH]= { 0 };
-	DOS_GetCurrentDir(result.drive + 1 ,currdir);
-	if (strcmp(currdir, result.fullname) == 0) {
+	auto currdir = DOS_GetCurrentDir(result.drive + 1);
+	if (strcmp(currdir.c_str(), result.fullname) == 0) {
 		DOS_SetError(DOSERR_REMOVE_CURRENT_DIRECTORY);
 		return false;
 	}
