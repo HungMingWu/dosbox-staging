@@ -999,7 +999,7 @@ bool fatDrive::FileCreate(std::unique_ptr<DOS_File> &file, const char *name, Bit
 
 	/* Empty file created, now lets open it */
 	/* TODO: check for read-only flag and requested write access */
-	auto fat_file = std::make_unique<fatFile>(name, fileEntry.loFirstClust, fileEntry.entrysize, this);
+	auto fat_file = std::unique_ptr<fatFile>(new fatFile(name, fileEntry.loFirstClust, fileEntry.entrysize, this));
 	fat_file->flags = OPEN_READWRITE;
 	fat_file->dirCluster = dirClust;
 	fat_file->dirIndex = subEntry;
@@ -1026,7 +1026,7 @@ bool fatDrive::FileOpen(std::unique_ptr<DOS_File> &file, const char *name, Bit32
 	Bit32u dirClust, subEntry;
 	if(!getFileDirEntry(name, &fileEntry, &dirClust, &subEntry)) return false;
 	/* TODO: check for read-only flag and requested write access */
-	auto fat_file = std::make_unique<fatFile>(name, fileEntry.loFirstClust, fileEntry.entrysize, this);
+	auto fat_file = std::unique_ptr<fatFile>(new fatFile(name, fileEntry.loFirstClust, fileEntry.entrysize, this));
 	fat_file->flags = flags;
 	fat_file->dirCluster = dirClust;
 	fat_file->dirIndex = subEntry;
