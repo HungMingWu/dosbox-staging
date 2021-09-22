@@ -175,22 +175,21 @@ void IMGMOUNT::Run(void) {
                 temp_line = std::move(homedir);
             } else {
                 // convert dosbox filename to system filename
-                char fullname[CROSS_LEN];
                 char tmp[CROSS_LEN];
                 safe_strcpy(tmp, temp_line.c_str());
 
-                Bit8u dummy;
-                if (!DOS_MakeName(tmp, fullname, &dummy) || strncmp(Drives[dummy]->GetInfo(),"local directory",15)) {
+                auto result = DOS_MakeName(tmp);
+                if (!result.success || strncmp(Drives[result.drive]->GetInfo(),"local directory",15)) {
                     WriteOut(MSG_Get("PROGRAM_IMGMOUNT_NON_LOCAL_DRIVE"));
                     return;
                 }
 
-                localDrive *ldp = dynamic_cast<localDrive*>(Drives[dummy].get());
+                localDrive *ldp = dynamic_cast<localDrive*>(Drives[result.drive].get());
                 if (ldp==NULL) {
                     WriteOut(MSG_Get("PROGRAM_IMGMOUNT_FILE_NOT_FOUND"));
                     return;
                 }
-                ldp->GetSystemFilename(tmp, fullname);
+                ldp->GetSystemFilename(tmp, result.fullname);
                 temp_line = tmp;
 
                 if (stat(temp_line.c_str(),&test)) {
@@ -199,7 +198,7 @@ void IMGMOUNT::Run(void) {
                 }
 
                 LOG_MSG("IMGMOUNT: Path '%s' found on virtual drive %c:",
-                        fullname, drive_letter(dummy));
+                        result.fullname, drive_letter(result.drive));
             }
         }
         if (S_ISDIR(test.st_mode)) {

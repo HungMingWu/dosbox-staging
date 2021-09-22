@@ -138,7 +138,12 @@ bool DOS_CreateTempFile(char * const name,Bit16u * entry);
 bool DOS_FileExists(char const * const name);
 
 /* Helper Functions */
-bool DOS_MakeName(char const * const name,char * const fullname,Bit8u * drive);
+struct MakeNameResult {
+	bool success;
+	char fullname[DOS_PATHLENGTH];
+	Bit8u drive;
+};
+MakeNameResult DOS_MakeName(char const *const name);
 /* Drive Handing Routines */
 Bit8u DOS_GetDefaultDrive(void);
 void DOS_SetDefaultDrive(Bit8u drive);

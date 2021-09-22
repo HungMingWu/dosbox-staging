@@ -1367,17 +1367,15 @@ bool CDROM_Interface_Image::GetRealFileName(string &filename, string &pathname)
 	}
 
 	// finally check if file is in a dosbox local drive
-	char fullname[CROSS_LEN];
 	char tmp[CROSS_LEN];
 	safe_strcpy(tmp, filename.c_str());
-	Bit8u drive;
-	if (!DOS_MakeName(tmp, fullname, &drive)) {
+	auto result = DOS_MakeName(tmp);
+	if (!result.success)
 		return false;
-	}
 
-	localDrive *ldp = dynamic_cast<localDrive*>(Drives[drive].get());
+	localDrive *ldp = dynamic_cast<localDrive*>(Drives[result.drive].get());
 	if (ldp) {
-		ldp->GetSystemFilename(tmp, fullname);
+		ldp->GetSystemFilename(tmp, result.fullname);
 		if (path_exists(tmp)) {
 			filename = tmp;
 			return true;

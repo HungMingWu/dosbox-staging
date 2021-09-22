@@ -108,16 +108,16 @@ DOS_File & DOS_File::operator= (const DOS_File & orig) {
 
 Bit8u DOS_FindDevice(char const * name) {
 	/* should only check for the names before the dot and spacepadded */
-	char fullname[DOS_PATHLENGTH];Bit8u drive;
 //	if(!name || !(*name)) return DOS_DEVICES; //important, but makename does it
-	if (!DOS_MakeName(name,fullname,&drive)) return DOS_DEVICES;
+	auto result = DOS_MakeName(name);
+	if (!result.success) return DOS_DEVICES;
 
-	char* name_part = strrchr(fullname,'\\');
+	char* name_part = strrchr(result.fullname,'\\');
 	if(name_part) {
 		*name_part++ = 0;
 		//Check validity of leading directory.
-		if(!Drives[drive]->TestDir(fullname)) return DOS_DEVICES;
-	} else name_part = fullname;
+		if(!Drives[result.drive]->TestDir(result.fullname)) return DOS_DEVICES;
+	} else name_part = result.fullname;
    
 	char* dot = strrchr(name_part,'.');
 	if(dot) *dot = 0; //no ext checking
