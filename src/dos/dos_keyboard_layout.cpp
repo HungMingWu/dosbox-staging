@@ -40,17 +40,15 @@
 
 
 static FILE* OpenDosboxFile(const char* name) {
-	Bit8u drive;
-	char fullname[DOS_PATHLENGTH];
-
 	localDrive* ldp=0;
 	// try to build dos name
-	if (DOS_MakeName(name,fullname,&drive)) {
+	auto result = DOS_MakeName(name);
+	if (result.success) {
 		try {
 			// try to open file on mounted drive first
-			ldp=dynamic_cast<localDrive*>(Drives[drive].get());
+			ldp=dynamic_cast<localDrive*>(Drives[result.drive].get());
 			if (ldp) {
-				FILE *tmpfile=ldp->GetSystemFilePtr(fullname, "rb");
+				FILE *tmpfile=ldp->GetSystemFilePtr(result.fullname, "rb");
 				if (tmpfile != NULL) return tmpfile;
 			}
 		}

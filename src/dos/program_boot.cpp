@@ -36,18 +36,17 @@ FILE* BOOT::getFSFile_mounted(char const* filename, Bit32u *ksize, Bit32u *bsize
     //if return NULL then put in error the errormessage code if an error was requested
     bool tryload = (*error)?true:false;
     *error = 0;
-    Bit8u drive;
     FILE *tmpfile;
-    char fullname[DOS_PATHLENGTH];
 
     localDrive* ldp=0;
-    if (!DOS_MakeName(const_cast<char*>(filename),fullname,&drive)) return NULL;
+    auto result = DOS_MakeName(const_cast<char *>(filename));
+    if (!result.success) return NULL;
 
     try {
-        ldp=dynamic_cast<localDrive*>(Drives[drive].get());
+        ldp=dynamic_cast<localDrive*>(Drives[result.drive].get());
         if (!ldp) return NULL;
 
-        tmpfile = ldp->GetSystemFilePtr(fullname, "rb");
+        tmpfile = ldp->GetSystemFilePtr(result.fullname, "rb");
         if (tmpfile == NULL) {
             if (!tryload) *error=1;
             return NULL;
@@ -59,12 +58,12 @@ FILE* BOOT::getFSFile_mounted(char const* filename, Bit32u *ksize, Bit32u *bsize
         *bsize = ftell(tmpfile);
         fclose(tmpfile);
 
-        tmpfile = ldp->GetSystemFilePtr(fullname, "rb+");
+        tmpfile = ldp->GetSystemFilePtr(result.fullname, "rb+");
         if (tmpfile == NULL) {
 //				if (!tryload) *error=2;
 //				return NULL;
             WriteOut(MSG_Get("PROGRAM_BOOT_WRITE_PROTECTED"));
-            tmpfile = ldp->GetSystemFilePtr(fullname, "rb");
+            tmpfile = ldp->GetSystemFilePtr(result.fullname, "rb");
             if (tmpfile == NULL) {
                 if (!tryload) *error=1;
                 return NULL;

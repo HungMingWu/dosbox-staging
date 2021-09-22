@@ -1504,13 +1504,13 @@ void DOS_Shell::CMD_SUBST (char * args) {
 		strcat(mountstring, temp_str);
 		strcat(mountstring, " ");
 
-   		Bit8u drive;char fulldir[DOS_PATHLENGTH];
-		if (!DOS_MakeName(const_cast<char*>(arg.c_str()),fulldir,&drive)) throw 0;
+		auto result = DOS_MakeName(const_cast<char *>(arg.c_str()));
+		if (!result.success) throw 0;
 
-		if ( ( ldp=dynamic_cast<localDrive*>(Drives[drive].get())) == 0 ) throw 0;
+		if ( ( ldp=dynamic_cast<localDrive*>(Drives[result.drive].get())) == 0 ) throw 0;
 		char newname[CROSS_LEN];
 		safe_strcpy(newname, ldp->GetBasedir());
-		strcat(newname,fulldir);
+		strcat(newname, result.fullname);
 		CROSS_FILENAME(newname);
 		ldp->dirCache.ExpandName(newname);
 		strcat(mountstring,"\"");
