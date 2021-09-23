@@ -188,12 +188,12 @@
 			Bit32u mask=1 << (*rmrd & 31);
 			if (rm >= 0xc0 ) {
 				GetEArd;
-				SETFLAGBIT(CF,(*eard & mask));
+				SETFLAGBIT(FLAG_CF, (*eard & mask));
 			} else {
 				GetEAa;eaa+=(((Bit32s)*rmrd)>>5)*4;
 				if (!TEST_PREFIX_ADDR) FixEA16;
 				Bit32u old=LoadMd(eaa);
-				SETFLAGBIT(CF,(old & mask));
+				SETFLAGBIT(FLAG_CF, (old & mask));
 			}
 			break;
 		}
@@ -214,13 +214,13 @@
 			Bit32u mask=1 << (*rmrd & 31);
 			if (rm >= 0xc0 ) {
 				GetEArd;
-				SETFLAGBIT(CF,(*eard & mask));
+				SETFLAGBIT(FLAG_CF, (*eard & mask));
 				*eard|=mask;
 			} else {
 				GetEAa;eaa+=(((Bit32s)*rmrd)>>5)*4;
 				if (!TEST_PREFIX_ADDR) FixEA16;
 				Bit32u old=LoadMd(eaa);
-				SETFLAGBIT(CF,(old & mask));
+				SETFLAGBIT(FLAG_CF, (old & mask));
 				SaveMd(eaa,old | mask);
 			}
 			break;
@@ -246,21 +246,21 @@
 				GetEArd;
 				if (*eard==reg_eax) {
 					*eard=*rmrd;
-					SETFLAGBIT(ZF,1);
+					SETFLAGBIT(FLAG_ZF, true);
 				} else {
 					reg_eax=*eard;
-					SETFLAGBIT(ZF,0);
+					SETFLAGBIT(FLAG_ZF, false);
 				}
 			} else {
 				GetEAa;
 				Bit32u val=LoadMd(eaa);
 				if (val==reg_eax) {
 					SaveMd(eaa,*rmrd);
-					SETFLAGBIT(ZF,1);
+					SETFLAGBIT(FLAG_ZF, true);
 				} else {
 					SaveMd(eaa,val);	// cmpxchg always issues a write
 					reg_eax=val;
-					SETFLAGBIT(ZF,0);
+					SETFLAGBIT(FLAG_ZF, false);
 				}
 			}
 			break;
@@ -280,13 +280,13 @@
 			Bit32u mask=1 << (*rmrd & 31);
 			if (rm >= 0xc0 ) {
 				GetEArd;
-				SETFLAGBIT(CF,(*eard & mask));
+				SETFLAGBIT(FLAG_CF, (*eard & mask));
 				*eard&= ~mask;
 			} else {
 				GetEAa;eaa+=(((Bit32s)*rmrd)>>5)*4;
 				if (!TEST_PREFIX_ADDR) FixEA16;
 				Bit32u old=LoadMd(eaa);
-				SETFLAGBIT(CF,(old & mask));
+				SETFLAGBIT(FLAG_CF, (old & mask));
 				SaveMd(eaa,old & ~mask);
 			}
 			break;
@@ -329,7 +329,7 @@
 			if (rm >= 0xc0 ) {
 				GetEArd;
 				Bit32u mask=1 << (Fetchb() & 31);
-				SETFLAGBIT(CF,(*eard & mask));
+				SETFLAGBIT(FLAG_CF, (*eard & mask));
 				switch (rm & 0x38) {
 				case 0x20:											/* BT */
 					break;
@@ -349,7 +349,7 @@
 			} else {
 				GetEAa;Bit32u old=LoadMd(eaa);
 				Bit32u mask=1 << (Fetchb() & 31);
-				SETFLAGBIT(CF,(old & mask));
+				SETFLAGBIT(FLAG_CF, (old & mask));
 				switch (rm & 0x38) {
 				case 0x20:											/* BT */
 					break;
@@ -376,13 +376,13 @@
 			Bit32u mask=1 << (*rmrd & 31);
 			if (rm >= 0xc0 ) {
 				GetEArd;
-				SETFLAGBIT(CF,(*eard & mask));
+				SETFLAGBIT(FLAG_CF, (*eard & mask));
 				*eard^=mask;
 			} else {
 				GetEAa;eaa+=(((Bit32s)*rmrd)>>5)*4;
 				if (!TEST_PREFIX_ADDR) FixEA16;
 				Bit32u old=LoadMd(eaa);
-				SETFLAGBIT(CF,(old & mask));
+				SETFLAGBIT(FLAG_CF, (old & mask));
 				SaveMd(eaa,old ^ mask);
 			}
 			break;
@@ -394,11 +394,11 @@
 			if (rm >= 0xc0) { GetEArd; value=*eard; } 
 			else			{ GetEAa; value=LoadMd(eaa); }
 			if (value==0) {
-				SETFLAGBIT(ZF,true);
+				SETFLAGBIT(FLAG_ZF, true);
 			} else {
 				result = 0;
 				while ((value & 0x01)==0) { result++; value>>=1; }
-				SETFLAGBIT(ZF,false);
+				SETFLAGBIT(FLAG_ZF, false);
 				*rmrd = result;
 			}
 			lflags.type=t_UNKNOWN;
@@ -411,11 +411,11 @@
 			if (rm >= 0xc0) { GetEArd; value=*eard; } 
 			else			{ GetEAa; value=LoadMd(eaa); }
 			if (value==0) {
-				SETFLAGBIT(ZF,true);
+				SETFLAGBIT(FLAG_ZF, true);
 			} else {
 				result = 31;	// Operandsize-1
 				while ((value & 0x80000000)==0) { result--; value<<=1; }
-				SETFLAGBIT(ZF,false);
+				SETFLAGBIT(FLAG_ZF,false);
 				*rmrd = result;
 			}
 			lflags.type=t_UNKNOWN;

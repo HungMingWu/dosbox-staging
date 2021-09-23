@@ -483,9 +483,9 @@ Bitu FillFlags(void) {
 
 #define DOFLAG_AF	reg_flags=(reg_flags & ~FLAG_AF) | (((lf_var1b ^ lf_var2b) ^ lf_resb) & 0x10);
 
-#define DOFLAG_ZFb	SETFLAGBIT(ZF,lf_resb==0);
-#define DOFLAG_ZFw	SETFLAGBIT(ZF,lf_resw==0);
-#define DOFLAG_ZFd	SETFLAGBIT(ZF,lf_resd==0);
+#define DOFLAG_ZFb	SETFLAGBIT(FLAG_ZF, lf_resb==0);
+#define DOFLAG_ZFw	SETFLAGBIT(FLAG_ZF, lf_resw==0);
+#define DOFLAG_ZFd	SETFLAGBIT(FLAG_ZF, lf_resd==0);
 
 #define DOFLAG_SFb	reg_flags=(reg_flags & ~FLAG_SF) | ((lf_resb & 0x80) >> 0);
 #define DOFLAG_SFw	reg_flags=(reg_flags & ~FLAG_SF) | ((lf_resw & 0x8000) >> 8);
@@ -493,378 +493,376 @@ Bitu FillFlags(void) {
 
 #define SETCF(NEWBIT) reg_flags=(reg_flags & ~FLAG_CF)|(NEWBIT);
 
-#define SET_FLAG SETFLAGBIT
-
 Bitu FillFlags(void) {
 	switch (lflags.type) {
 	case t_UNKNOWN:
 		break;
 	case t_ADDb:	
-		SET_FLAG(CF,(lf_resb<lf_var1b));
+		SETFLAGBIT(FLAG_CF, (lf_resb < lf_var1b));
 		DOFLAG_AF;
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
-		SET_FLAG(OF,((lf_var1b ^ lf_var2b ^ 0x80) & (lf_resb ^ lf_var1b)) & 0x80);
+		SETFLAGBIT(FLAG_OF, ((lf_var1b ^ lf_var2b ^ 0x80) & (lf_resb ^ lf_var1b)) & 0x80);
 		DOFLAG_PF;
 		break;
 	case t_ADDw:	
-		SET_FLAG(CF,(lf_resw<lf_var1w));
+		SETFLAGBIT(FLAG_CF, (lf_resw < lf_var1w));
 		DOFLAG_AF;
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		SET_FLAG(OF,((lf_var1w ^ lf_var2w ^ 0x8000) & (lf_resw ^ lf_var1w)) & 0x8000);
+		SETFLAGBIT(FLAG_OF, ((lf_var1w ^ lf_var2w ^ 0x8000) & (lf_resw ^ lf_var1w)) & 0x8000);
 		DOFLAG_PF;
 		break;
 	case t_ADDd:
-		SET_FLAG(CF,(lf_resd<lf_var1d));
+		SETFLAGBIT(FLAG_CF, (lf_resd < lf_var1d));
 		DOFLAG_AF;
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		SET_FLAG(OF,((lf_var1d ^ lf_var2d ^ 0x80000000) & (lf_resd ^ lf_var1d)) & 0x80000000);
+		SETFLAGBIT(FLAG_OF, ((lf_var1d ^ lf_var2d ^ 0x80000000) & (lf_resd ^ lf_var1d)) & 0x80000000);
 		DOFLAG_PF;
 		break;
 	case t_ADCb:
-		SET_FLAG(CF,(lf_resb < lf_var1b) || (lflags.oldcf && (lf_resb == lf_var1b)));
+		SETFLAGBIT(FLAG_CF, (lf_resb < lf_var1b) || (lflags.oldcf && (lf_resb == lf_var1b)));
 		DOFLAG_AF;
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
-		SET_FLAG(OF,((lf_var1b ^ lf_var2b ^ 0x80) & (lf_resb ^ lf_var1b)) & 0x80);
+		SETFLAGBIT(FLAG_OF, ((lf_var1b ^ lf_var2b ^ 0x80) & (lf_resb ^ lf_var1b)) & 0x80);
 		DOFLAG_PF;
 		break;
 	case t_ADCw:
-		SET_FLAG(CF,(lf_resw < lf_var1w) || (lflags.oldcf && (lf_resw == lf_var1w)));
+		SETFLAGBIT(FLAG_CF, (lf_resw < lf_var1w) || (lflags.oldcf && (lf_resw == lf_var1w)));
 		DOFLAG_AF;
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		SET_FLAG(OF,((lf_var1w ^ lf_var2w ^ 0x8000) & (lf_resw ^ lf_var1w)) & 0x8000);
+		SETFLAGBIT(FLAG_OF, ((lf_var1w ^ lf_var2w ^ 0x8000) & (lf_resw ^ lf_var1w)) & 0x8000);
 		DOFLAG_PF;
 		break;
 	case t_ADCd:
-		SET_FLAG(CF,(lf_resd < lf_var1d) || (lflags.oldcf && (lf_resd == lf_var1d)));
+		SETFLAGBIT(FLAG_CF, (lf_resd < lf_var1d) || (lflags.oldcf && (lf_resd == lf_var1d)));
 		DOFLAG_AF;
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		SET_FLAG(OF,((lf_var1d ^ lf_var2d ^ 0x80000000) & (lf_resd ^ lf_var1d)) & 0x80000000);
+		SETFLAGBIT(FLAG_OF, ((lf_var1d ^ lf_var2d ^ 0x80000000) & (lf_resd ^ lf_var1d)) & 0x80000000);
 		DOFLAG_PF;
 		break;
 
 
 	case t_SBBb:
-		SET_FLAG(CF,(lf_var1b < lf_resb) || (lflags.oldcf && (lf_var2b==0xff)));
+		SETFLAGBIT(FLAG_CF, (lf_var1b < lf_resb) || (lflags.oldcf && (lf_var2b==0xff)));
 		DOFLAG_AF;
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
-		SET_FLAG(OF,(lf_var1b ^ lf_var2b) & (lf_var1b ^ lf_resb) & 0x80);
+		SETFLAGBIT(FLAG_OF, (lf_var1b ^ lf_var2b) & (lf_var1b ^ lf_resb) & 0x80);
 		DOFLAG_PF;
 		break;
 	case t_SBBw:
-		SET_FLAG(CF,(lf_var1w < lf_resw) || (lflags.oldcf && (lf_var2w==0xffff)));
+		SETFLAGBIT(FLAG_CF, (lf_var1w < lf_resw) || (lflags.oldcf && (lf_var2w==0xffff)));
 		DOFLAG_AF;
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		SET_FLAG(OF,(lf_var1w ^ lf_var2w) & (lf_var1w ^ lf_resw) & 0x8000);
+		SETFLAGBIT(FLAG_OF, (lf_var1w ^ lf_var2w) & (lf_var1w ^ lf_resw) & 0x8000);
 		DOFLAG_PF;
 		break;
 	case t_SBBd:
-		SET_FLAG(CF,(lf_var1d < lf_resd) || (lflags.oldcf && (lf_var2d==0xffffffff)));
+		SETFLAGBIT(FLAG_CF, (lf_var1d < lf_resd) || (lflags.oldcf && (lf_var2d==0xffffffff)));
 		DOFLAG_AF;
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		SET_FLAG(OF,(lf_var1d ^ lf_var2d) & (lf_var1d ^ lf_resd) & 0x80000000);
+		SETFLAGBIT(FLAG_OF, (lf_var1d ^ lf_var2d) & (lf_var1d ^ lf_resd) & 0x80000000);
 		DOFLAG_PF;
 		break;
 	
 
 	case t_SUBb:
 	case t_CMPb:
-		SET_FLAG(CF,(lf_var1b<lf_var2b));
+		SETFLAGBIT(FLAG_CF, (lf_var1b < lf_var2b));
 		DOFLAG_AF;
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
-		SET_FLAG(OF,(lf_var1b ^ lf_var2b) & (lf_var1b ^ lf_resb) & 0x80);
+		SETFLAGBIT(FLAG_OF, (lf_var1b ^ lf_var2b) & (lf_var1b ^ lf_resb) & 0x80);
 		DOFLAG_PF;
 		break;
 	case t_SUBw:
 	case t_CMPw:
-		SET_FLAG(CF,(lf_var1w<lf_var2w));
+		SETFLAGBIT(FLAG_CF, (lf_var1w < lf_var2w));
 		DOFLAG_AF;
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		SET_FLAG(OF,(lf_var1w ^ lf_var2w) & (lf_var1w ^ lf_resw) & 0x8000);
+		SETFLAGBIT(FLAG_OF, (lf_var1w ^ lf_var2w) & (lf_var1w ^ lf_resw) & 0x8000);
 		DOFLAG_PF;
 		break;
 	case t_SUBd:
 	case t_CMPd:
-		SET_FLAG(CF,(lf_var1d<lf_var2d));
+		SETFLAGBIT(FLAG_CF, (lf_var1d < lf_var2d));
 		DOFLAG_AF;
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		SET_FLAG(OF,(lf_var1d ^ lf_var2d) & (lf_var1d ^ lf_resd) & 0x80000000);
+		SETFLAGBIT(FLAG_OF, (lf_var1d ^ lf_var2d) & (lf_var1d ^ lf_resd) & 0x80000000);
 		DOFLAG_PF;
 		break;
 
 
 	case t_ORb:
-		SET_FLAG(CF,false);
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_CF, false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
-		SET_FLAG(OF,false);
+		SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
 		break;
 	case t_ORw:
-		SET_FLAG(CF,false);
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_CF, false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		SET_FLAG(OF,false);
+		SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
 		break;
 	case t_ORd:
-		SET_FLAG(CF,false);
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_CF, false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		SET_FLAG(OF,false);
+		SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
 		break;
 	
 	
 	case t_TESTb:
 	case t_ANDb:
-		SET_FLAG(CF,false);
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_CF, false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
-		SET_FLAG(OF,false);
+		SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
 		break;
 	case t_TESTw:
 	case t_ANDw:
-		SET_FLAG(CF,false);
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_CF, false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		SET_FLAG(OF,false);
+		SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
 		break;
 	case t_TESTd:
 	case t_ANDd:
-		SET_FLAG(CF,false);
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_CF, false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		SET_FLAG(OF,false);
+		SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
 		break;
 
 	
 	case t_XORb:
-		SET_FLAG(CF,false);
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_CF, false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
-		SET_FLAG(OF,false);
+		SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
 		break;
 	case t_XORw:
-		SET_FLAG(CF,false);
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_CF, false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		SET_FLAG(OF,false);
+		SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
 		break;
 	case t_XORd:
-		SET_FLAG(CF,false);
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_CF, false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		SET_FLAG(OF,false);
+		SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
 		break;
 
 
 	case t_SHLb:
-		if (lf_var2b>8) SET_FLAG(CF,false);
-		else SET_FLAG(CF,(lf_var1b >> (8-lf_var2b)) & 1);
+		if (lf_var2b>8) SETFLAGBIT(FLAG_CF, false);
+		else SETFLAGBIT(FLAG_CF, (lf_var1b >> (8-lf_var2b)) & 1);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
-		SET_FLAG(OF,(lf_resb ^ lf_var1b) & 0x80);
+		SETFLAGBIT(FLAG_OF, (lf_resb ^ lf_var1b) & 0x80);
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2b&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2b & 0x1f));
 		break;
 	case t_SHLw:
-		if (lf_var2b>16) SET_FLAG(CF,false);
-		else SET_FLAG(CF,(lf_var1w >> (16-lf_var2b)) & 1);
+		if (lf_var2b>16) SETFLAGBIT(FLAG_CF, false);
+		else SETFLAGBIT(FLAG_CF, (lf_var1w >> (16-lf_var2b)) & 1);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		SET_FLAG(OF,(lf_resw ^ lf_var1w) & 0x8000);
+		SETFLAGBIT(FLAG_OF, (lf_resw ^ lf_var1w) & 0x8000);
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2w&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2w & 0x1f));
 		break;
 	case t_SHLd:
-		SET_FLAG(CF,(lf_var1d >> (32 - lf_var2b)) & 1);
+		SETFLAGBIT(FLAG_CF, (lf_var1d >> (32 - lf_var2b)) & 1);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		SET_FLAG(OF,(lf_resd ^ lf_var1d) & 0x80000000);
+		SETFLAGBIT(FLAG_OF, (lf_resd ^ lf_var1d) & 0x80000000);
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2d&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2d & 0x1f));
 		break;
 
 
 	case t_DSHLw:
-		SET_FLAG(CF,(lf_var1d >> (32 - lf_var2b)) & 1);
+		SETFLAGBIT(FLAG_CF, (lf_var1d >> (32 - lf_var2b)) & 1);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		SET_FLAG(OF,(lf_resw ^ lf_var1w) & 0x8000);
+		SETFLAGBIT(FLAG_OF, (lf_resw ^ lf_var1w) & 0x8000);
 		DOFLAG_PF;
 		break;
 	case t_DSHLd:
-		SET_FLAG(CF,(lf_var1d >> (32 - lf_var2b)) & 1);
+		SETFLAGBIT(FLAG_CF, (lf_var1d >> (32 - lf_var2b)) & 1);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		SET_FLAG(OF,(lf_resd ^ lf_var1d) & 0x80000000);
+		SETFLAGBIT(FLAG_OF, (lf_resd ^ lf_var1d) & 0x80000000);
 		DOFLAG_PF;
 		break;
 
 
 	case t_SHRb:
-		SET_FLAG(CF,(lf_var1b >> (lf_var2b - 1)) & 1);
+		SETFLAGBIT(FLAG_CF, (lf_var1b >> (lf_var2b - 1)) & 1);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
-		if ((lf_var2b&0x1f)==1) SET_FLAG(OF,(lf_var1b >= 0x80));
-		else SET_FLAG(OF,false);
+		if ((lf_var2b&0x1f)==1) SETFLAGBIT(FLAG_OF, (lf_var1b >= 0x80));
+		else SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2b&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2b & 0x1f));
 		break;
 	case t_SHRw:
-		SET_FLAG(CF,(lf_var1w >> (lf_var2b - 1)) & 1);
+		SETFLAGBIT(FLAG_CF, (lf_var1w >> (lf_var2b - 1)) & 1);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		if ((lf_var2w&0x1f)==1) SET_FLAG(OF,(lf_var1w >= 0x8000));
-		else SET_FLAG(OF,false);
+		if ((lf_var2w&0x1f)==1) SETFLAGBIT(FLAG_OF, (lf_var1w >= 0x8000));
+		else SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2w&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2w & 0x1f));
 		break;
 	case t_SHRd:
-		SET_FLAG(CF,(lf_var1d >> (lf_var2b - 1)) & 1);
+		SETFLAGBIT(FLAG_CF, (lf_var1d >> (lf_var2b - 1)) & 1);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		if ((lf_var2d&0x1f)==1) SET_FLAG(OF,(lf_var1d >= 0x80000000));
-		else SET_FLAG(OF,false);
+		if ((lf_var2d&0x1f)==1) SETFLAGBIT(FLAG_OF,(lf_var1d >= 0x80000000));
+		else SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2d&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2d & 0x1f));
 		break;
 
 	
 	case t_DSHRw:	/* Hmm this is not correct for shift higher than 16 */
-		SET_FLAG(CF,(lf_var1d >> (lf_var2b - 1)) & 1);
+		SETFLAGBIT(FLAG_CF, (lf_var1d >> (lf_var2b - 1)) & 1);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		SET_FLAG(OF,(lf_resw ^ lf_var1w) & 0x8000);
+		SETFLAGBIT(FLAG_OF, (lf_resw ^ lf_var1w) & 0x8000);
 		DOFLAG_PF;
 		break;
 	case t_DSHRd:
-		SET_FLAG(CF,(lf_var1d >> (lf_var2b - 1)) & 1);
+		SETFLAGBIT(FLAG_CF, (lf_var1d >> (lf_var2b - 1)) & 1);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		SET_FLAG(OF,(lf_resd ^ lf_var1d) & 0x80000000);
+		SETFLAGBIT(FLAG_OF, (lf_resd ^ lf_var1d) & 0x80000000);
 		DOFLAG_PF;
 		break;
 
 
 	case t_SARb:
-		SET_FLAG(CF,(((Bit8s) lf_var1b) >> (lf_var2b - 1)) & 1);
+		SETFLAGBIT(FLAG_CF, (((Bit8s)lf_var1b) >> (lf_var2b - 1)) & 1);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
-		SET_FLAG(OF,false);
+		SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2b&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2b & 0x1f));
 		break;
 	case t_SARw:
-		SET_FLAG(CF,(((Bit16s) lf_var1w) >> (lf_var2b - 1)) & 1);
+		SETFLAGBIT(FLAG_CF, (((Bit16s)lf_var1w) >> (lf_var2b - 1)) & 1);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		SET_FLAG(OF,false);
+		SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2w&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2w & 0x1f));
 		break;
 	case t_SARd:
-		SET_FLAG(CF,(((Bit32s) lf_var1d) >> (lf_var2b - 1)) & 1);
+		SETFLAGBIT(FLAG_CF, (((Bit32s)lf_var1d) >> (lf_var2b - 1)) & 1);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		SET_FLAG(OF,false);
+		SETFLAGBIT(FLAG_OF, false);
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2d&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2d & 0x1f));
 		break;
 
 	case t_INCb:
-		SET_FLAG(AF,(lf_resb & 0x0f) == 0);
+		SETFLAGBIT(FLAG_AF, (lf_resb & 0x0f) == 0);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
-		SET_FLAG(OF,(lf_resb == 0x80));
+		SETFLAGBIT(FLAG_OF, (lf_resb == 0x80));
 		DOFLAG_PF;
 		break;
 	case t_INCw:
-		SET_FLAG(AF,(lf_resw & 0x0f) == 0);
+		SETFLAGBIT(FLAG_AF, (lf_resw & 0x0f) == 0);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		SET_FLAG(OF,(lf_resw == 0x8000));
+		SETFLAGBIT(FLAG_OF, (lf_resw == 0x8000));
 		DOFLAG_PF;
 		break;
 	case t_INCd:
-		SET_FLAG(AF,(lf_resd & 0x0f) == 0);
+		SETFLAGBIT(FLAG_AF, (lf_resd & 0x0f) == 0);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		SET_FLAG(OF,(lf_resd == 0x80000000));
+		SETFLAGBIT(FLAG_OF, (lf_resd == 0x80000000));
 		DOFLAG_PF;
 		break;
 
 	case t_DECb:
-		SET_FLAG(AF,(lf_resb & 0x0f) == 0x0f);
+		SETFLAGBIT(FLAG_AF, (lf_resb & 0x0f) == 0x0f);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
-		SET_FLAG(OF,(lf_resb == 0x7f));
+		SETFLAGBIT(FLAG_OF, (lf_resb == 0x7f));
 		DOFLAG_PF;
 		break;
 	case t_DECw:
-		SET_FLAG(AF,(lf_resw & 0x0f) == 0x0f);
+		SETFLAGBIT(FLAG_AF, (lf_resw & 0x0f) == 0x0f);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		SET_FLAG(OF,(lf_resw == 0x7fff));
+		SETFLAGBIT(FLAG_OF, (lf_resw == 0x7fff));
 		DOFLAG_PF;
 		break;
 	case t_DECd:
-		SET_FLAG(AF,(lf_resd & 0x0f) == 0x0f);
+		SETFLAGBIT(FLAG_AF, (lf_resd & 0x0f) == 0x0f);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		SET_FLAG(OF,(lf_resd == 0x7fffffff));
+		SETFLAGBIT(FLAG_OF, (lf_resd == 0x7fffffff));
 		DOFLAG_PF;
 		break;
 
 	case t_NEGb:
-		SET_FLAG(CF,(lf_var1b!=0));
-		SET_FLAG(AF,(lf_resb & 0x0f) != 0);
+		SETFLAGBIT(FLAG_CF, (lf_var1b != 0));
+		SETFLAGBIT(FLAG_AF, (lf_resb & 0x0f) != 0);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
-		SET_FLAG(OF,(lf_var1b == 0x80));
+		SETFLAGBIT(FLAG_OF, (lf_var1b == 0x80));
 		DOFLAG_PF;
 		break;
 	case t_NEGw:
-		SET_FLAG(CF,(lf_var1w!=0));
-		SET_FLAG(AF,(lf_resw & 0x0f) != 0);
+		SETFLAGBIT(FLAG_CF, (lf_var1w != 0));
+		SETFLAGBIT(FLAG_AF, (lf_resw & 0x0f) != 0);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
-		SET_FLAG(OF,(lf_var1w == 0x8000));
+		SETFLAGBIT(FLAG_OF, (lf_var1w == 0x8000));
 		DOFLAG_PF;
 		break;
 	case t_NEGd:
-		SET_FLAG(CF,(lf_var1d!=0));
-		SET_FLAG(AF,(lf_resd & 0x0f) != 0);
+		SETFLAGBIT(FLAG_CF, (lf_var1d != 0));
+		SETFLAGBIT(FLAG_AF, (lf_resd & 0x0f) != 0);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
-		SET_FLAG(OF,(lf_var1d == 0x80000000));
+		SETFLAGBIT(FLAG_OF, (lf_var1d == 0x80000000));
 		DOFLAG_PF;
 		break;
 
@@ -967,19 +965,19 @@ void FillFlagsNoCFOF(void) {
 
 
 	case t_ORb:
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
 		DOFLAG_PF;
 		break;
 	case t_ORw:
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
 		DOFLAG_PF;
 		break;
 	case t_ORd:
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
 		DOFLAG_PF;
@@ -988,21 +986,21 @@ void FillFlagsNoCFOF(void) {
 	
 	case t_TESTb:
 	case t_ANDb:
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
 		DOFLAG_PF;
 		break;
 	case t_TESTw:
 	case t_ANDw:
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
 		DOFLAG_PF;
 		break;
 	case t_TESTd:
 	case t_ANDd:
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
 		DOFLAG_PF;
@@ -1010,19 +1008,19 @@ void FillFlagsNoCFOF(void) {
 
 	
 	case t_XORb:
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
 		DOFLAG_PF;
 		break;
 	case t_XORw:
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
 		DOFLAG_PF;
 		break;
 	case t_XORd:
-		SET_FLAG(AF,false);
+		SETFLAGBIT(FLAG_AF, false);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
 		DOFLAG_PF;
@@ -1033,19 +1031,19 @@ void FillFlagsNoCFOF(void) {
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2b&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2b & 0x1f));
 		break;
 	case t_SHLw:
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2w&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2w & 0x1f));
 		break;
 	case t_SHLd:
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2d&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2d & 0x1f));
 		break;
 
 
@@ -1065,19 +1063,19 @@ void FillFlagsNoCFOF(void) {
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2b&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2b & 0x1f));
 		break;
 	case t_SHRw:
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2w&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2w & 0x1f));
 		break;
 	case t_SHRd:
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2d&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2d & 0x1f));
 		break;
 
 	
@@ -1097,73 +1095,73 @@ void FillFlagsNoCFOF(void) {
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2b&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2b & 0x1f));
 		break;
 	case t_SARw:
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2w&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2w & 0x1f));
 		break;
 	case t_SARd:
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
 		DOFLAG_PF;
-		SET_FLAG(AF,(lf_var2d&0x1f));
+		SETFLAGBIT(FLAG_AF, (lf_var2d & 0x1f));
 		break;
 
 	case t_INCb:
-		SET_FLAG(AF,(lf_resb & 0x0f) == 0);
+		SETFLAGBIT(FLAG_AF, (lf_resb & 0x0f) == 0);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
 		DOFLAG_PF;
 		break;
 	case t_INCw:
-		SET_FLAG(AF,(lf_resw & 0x0f) == 0);
+		SETFLAGBIT(FLAG_AF, (lf_resw & 0x0f) == 0);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
 		DOFLAG_PF;
 		break;
 	case t_INCd:
-		SET_FLAG(AF,(lf_resd & 0x0f) == 0);
+		SETFLAGBIT(FLAG_AF, (lf_resd & 0x0f) == 0);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
 		DOFLAG_PF;
 		break;
 
 	case t_DECb:
-		SET_FLAG(AF,(lf_resb & 0x0f) == 0x0f);
+		SETFLAGBIT(FLAG_AF, (lf_resb & 0x0f) == 0x0f);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
 		DOFLAG_PF;
 		break;
 	case t_DECw:
-		SET_FLAG(AF,(lf_resw & 0x0f) == 0x0f);
+		SETFLAGBIT(FLAG_AF, (lf_resw & 0x0f) == 0x0f);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
 		DOFLAG_PF;
 		break;
 	case t_DECd:
-		SET_FLAG(AF,(lf_resd & 0x0f) == 0x0f);
+		SETFLAGBIT(FLAG_AF, (lf_resd & 0x0f) == 0x0f);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
 		DOFLAG_PF;
 		break;
 
 	case t_NEGb:
-		SET_FLAG(AF,(lf_resb & 0x0f) != 0);
+		SETFLAGBIT(FLAG_AF, (lf_resb & 0x0f) != 0);
 		DOFLAG_ZFb;
 		DOFLAG_SFb;
 		DOFLAG_PF;
 		break;
 	case t_NEGw:
-		SET_FLAG(AF,(lf_resw & 0x0f) != 0);
+		SETFLAGBIT(FLAG_AF, (lf_resw & 0x0f) != 0);
 		DOFLAG_ZFw;
 		DOFLAG_SFw;
 		DOFLAG_PF;
 		break;
 	case t_NEGd:
-		SET_FLAG(AF,(lf_resd & 0x0f) != 0);
+		SETFLAGBIT(FLAG_AF, (lf_resd & 0x0f) != 0);
 		DOFLAG_ZFd;
 		DOFLAG_SFd;
 		DOFLAG_PF;

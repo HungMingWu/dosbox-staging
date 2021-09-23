@@ -44,7 +44,7 @@
 #define FMASK_NORMAL	(FMASK_TEST | FLAG_DF | FLAG_TF | FLAG_IF )	
 #define FMASK_ALL		(FMASK_NORMAL | FLAG_IOPL | FLAG_NT)
 
-#define SETFLAGBIT(TYPE,TEST) if (TEST) reg_flags|=FLAG_ ## TYPE; else reg_flags&=~FLAG_ ## TYPE
+void SETFLAGBIT(Bitu flag, bool test);
 
 #define GETFLAG(TYPE) (reg_flags & FLAG_ ## TYPE)
 #define GETFLAGBOOL(TYPE) ((reg_flags & FLAG_ ## TYPE) ? true : false )

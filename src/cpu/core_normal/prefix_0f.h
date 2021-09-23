@@ -318,12 +318,12 @@
 			Bit16u mask=1 << (*rmrw & 15);
 			if (rm >= 0xc0 ) {
 				GetEArw;
-				SETFLAGBIT(CF,(*earw & mask));
+				SETFLAGBIT(FLAG_CF, (*earw & mask));
 			} else {
 				GetEAa;eaa+=(((Bit16s)*rmrw)>>4)*2;
 				if (!TEST_PREFIX_ADDR) FixEA16;
 				Bit16u old=LoadMw(eaa);
-				SETFLAGBIT(CF,(old & mask));
+				SETFLAGBIT(FLAG_CF, (old & mask));
 			}
 			break;
 		}
@@ -344,13 +344,13 @@
 			Bit16u mask=1 << (*rmrw & 15);
 			if (rm >= 0xc0 ) {
 				GetEArw;
-				SETFLAGBIT(CF,(*earw & mask));
+				SETFLAGBIT(FLAG_CF, (*earw & mask));
 				*earw|=mask;
 			} else {
 				GetEAa;eaa+=(((Bit16s)*rmrw)>>4)*2;
 				if (!TEST_PREFIX_ADDR) FixEA16;
 				Bit16u old=LoadMw(eaa);
-				SETFLAGBIT(CF,(old & mask));
+				SETFLAGBIT(FLAG_CF, (old & mask));
 				SaveMw(eaa,old | mask);
 			}
 			break;
@@ -373,21 +373,21 @@
 				GetEArb;
 				if (reg_al == *earb) {
 					*earb=*rmrb;
-					SETFLAGBIT(ZF,1);
+					SETFLAGBIT(FLAG_ZF,true);
 				} else {
 					reg_al = *earb;
-					SETFLAGBIT(ZF,0);
+					SETFLAGBIT(FLAG_ZF,false);
 				}
 			} else {
    				GetEAa;
 				Bit8u val = LoadMb(eaa);
 				if (reg_al == val) { 
 					SaveMb(eaa,*rmrb);
-					SETFLAGBIT(ZF,1);
+					SETFLAGBIT(FLAG_ZF, true);
 				} else {
 					SaveMb(eaa,val);	// cmpxchg always issues a write
 					reg_al = val;
-					SETFLAGBIT(ZF,0);
+					SETFLAGBIT(FLAG_ZF, false);
 				}
 			}
 			break;
@@ -401,21 +401,21 @@
 				GetEArw;
 				if(reg_ax == *earw) { 
 					*earw = *rmrw;
-					SETFLAGBIT(ZF,1);
+					SETFLAGBIT(FLAG_ZF, true);
 				} else {
 					reg_ax = *earw;
-					SETFLAGBIT(ZF,0);
+					SETFLAGBIT(FLAG_ZF, false);
 				}
 			} else {
    				GetEAa;
 				Bit16u val = LoadMw(eaa);
 				if(reg_ax == val) { 
 					SaveMw(eaa,*rmrw);
-					SETFLAGBIT(ZF,1);
+					SETFLAGBIT(FLAG_ZF, true);
 				} else {
 					SaveMw(eaa,val);	// cmpxchg always issues a write
 					reg_ax = val;
-					SETFLAGBIT(ZF,0);
+					SETFLAGBIT(FLAG_ZF, false);
 				}
 			}
 			break;
@@ -436,13 +436,13 @@
 			Bit16u mask=1 << (*rmrw & 15);
 			if (rm >= 0xc0 ) {
 				GetEArw;
-				SETFLAGBIT(CF,(*earw & mask));
+				SETFLAGBIT(FLAG_CF, (*earw & mask));
 				*earw&= ~mask;
 			} else {
 				GetEAa;eaa+=(((Bit16s)*rmrw)>>4)*2;
 				if (!TEST_PREFIX_ADDR) FixEA16;
 				Bit16u old=LoadMw(eaa);
-				SETFLAGBIT(CF,(old & mask));
+				SETFLAGBIT(FLAG_CF,(old & mask));
 				SaveMw(eaa,old & ~mask);
 			}
 			break;
@@ -486,7 +486,7 @@
 			if (rm >= 0xc0 ) {
 				GetEArw;
 				Bit16u mask=1 << (Fetchb() & 15);
-				SETFLAGBIT(CF,(*earw & mask));
+				SETFLAGBIT(FLAG_CF, (*earw & mask));
 				switch (rm & 0x38) {
 				case 0x20:										/* BT */
 					break;
@@ -505,7 +505,7 @@
 			} else {
 				GetEAa;Bit16u old=LoadMw(eaa);
 				Bit16u mask=1 << (Fetchb() & 15);
-				SETFLAGBIT(CF,(old & mask));
+				SETFLAGBIT(FLAG_CF, (old & mask));
 				switch (rm & 0x38) {
 				case 0x20:										/* BT */
 					break;
@@ -530,13 +530,13 @@
 			Bit16u mask=1 << (*rmrw & 15);
 			if (rm >= 0xc0 ) {
 				GetEArw;
-				SETFLAGBIT(CF,(*earw & mask));
+				SETFLAGBIT(FLAG_CF, (*earw & mask));
 				*earw^=mask;
 			} else {
 				GetEAa;eaa+=(((Bit16s)*rmrw)>>4)*2;
 				if (!TEST_PREFIX_ADDR) FixEA16;
 				Bit16u old=LoadMw(eaa);
-				SETFLAGBIT(CF,(old & mask));
+				SETFLAGBIT(FLAG_CF, (old & mask));
 				SaveMw(eaa,old ^ mask);
 			}
 			break;
@@ -548,11 +548,11 @@
 			if (rm >= 0xc0) { GetEArw; value=*earw; } 
 			else			{ GetEAa; value=LoadMw(eaa); }
 			if (value==0) {
-				SETFLAGBIT(ZF,true);
+				SETFLAGBIT(FLAG_ZF, true);
 			} else {
 				result = 0;
 				while ((value & 0x01)==0) { result++; value>>=1; }
-				SETFLAGBIT(ZF,false);
+				SETFLAGBIT(FLAG_ZF, false);
 				*rmrw = result;
 			}
 			lflags.type=t_UNKNOWN;
@@ -565,11 +565,11 @@
 			if (rm >= 0xc0) { GetEArw; value=*earw; } 
 			else			{ GetEAa; value=LoadMw(eaa); }
 			if (value==0) {
-				SETFLAGBIT(ZF,true);
+				SETFLAGBIT(FLAG_ZF,true);
 			} else {
 				result = 15;	// Operandsize-1
 				while ((value & 0x8000)==0) { result--; value<<=1; }
-				SETFLAGBIT(ZF,false);
+				SETFLAGBIT(FLAG_ZF,false);
 				*rmrw = result;
 			}
 			lflags.type=t_UNKNOWN;

@@ -972,7 +972,7 @@
 		return CBRET_NONE;		//Needs to return for hlt cpu core
 	CASE_B(0xf5)												/* CMC */
 		FillFlags();
-		SETFLAGBIT(CF,!(reg_flags & FLAG_CF));
+		SETFLAGBIT(FLAG_CF, !(reg_flags & FLAG_CF));
 		break;
 	CASE_B(0xf6)												/* GRP3 Eb(,Ib) */
 		{	
@@ -1064,11 +1064,11 @@
 		}
 	CASE_B(0xf8)												/* CLC */
 		FillFlags();
-		SETFLAGBIT(CF,false);
+		SETFLAGBIT(FLAG_CF, false);
 		break;
 	CASE_B(0xf9)												/* STC */
 		FillFlags();
-		SETFLAGBIT(CF,true);
+		SETFLAGBIT(FLAG_CF, true);
 		break;
 	CASE_B(0xfa)												/* CLI */
 		if (CPU_CLI()) RUNEXCEPTION();
@@ -1080,11 +1080,11 @@
 #endif
 		break;
 	CASE_B(0xfc)												/* CLD */
-		SETFLAGBIT(DF,false);
+		SETFLAGBIT(FLAG_DF, false);
 		cpu.direction=1;
 		break;
 	CASE_B(0xfd)												/* STD */
-		SETFLAGBIT(DF,true);
+		SETFLAGBIT(FLAG_DF, true);
 		cpu.direction=-1;
 		break;
 	CASE_B(0xfe)												/* GRP4 Eb */

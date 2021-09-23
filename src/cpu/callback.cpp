@@ -61,7 +61,7 @@ void CALLBACK_DeAllocate(Bitu in) {
 void CALLBACK_Idle(void) {
 /* this makes the cpu execute instructions to handle irq's and then come back */
 	Bitu oldIF=GETFLAG(IF);
-	SETFLAGBIT(IF,true);
+	SETFLAGBIT(FLAG_IF, true);
 	Bit16u oldcs=SegValue(cs);
 	Bit32u oldeip=reg_eip;
 	SegSet16(cs,CB_SEG);
@@ -69,7 +69,7 @@ void CALLBACK_Idle(void) {
 	DOSBOX_RunMachine();
 	reg_eip=oldeip;
 	SegSet16(cs,oldcs);
-	SETFLAGBIT(IF,oldIF);
+	SETFLAGBIT(FLAG_IF, oldIF);
 	if (!CPU_CycleAutoAdjust && CPU_Cycles>0)
 		CPU_Cycles=0;
 }
