@@ -500,7 +500,7 @@ switch (inst.code.op) {
 		{
 			FillFlags();
 			if (!inst_op1_w) {
-				SETFLAGBIT(ZF,true);
+				SETFLAGBIT(FLAG_ZF, true);
 				goto nextopcode;
 			} else {
 				Bitu count=0;
@@ -509,7 +509,7 @@ switch (inst.code.op) {
 					count++;inst_op1_w>>=1;
 				}
 				inst_op1_d=count;
-				SETFLAGBIT(ZF,false);
+				SETFLAGBIT(FLAG_ZF, false);
 			}
 		}
 		break;
@@ -517,7 +517,7 @@ switch (inst.code.op) {
 		{
 			FillFlags();
 			if (!inst_op1_d) {
-				SETFLAGBIT(ZF,true);
+				SETFLAGBIT(FLAG_ZF, true);
 				goto nextopcode;
 			} else {
 				Bitu count=0;
@@ -526,7 +526,7 @@ switch (inst.code.op) {
 					count++;inst_op1_d>>=1;
 				}
 				inst_op1_d=count;
-				SETFLAGBIT(ZF,false);
+				SETFLAGBIT(FLAG_ZF, false);
 			}
 		}
 		break;
@@ -534,7 +534,7 @@ switch (inst.code.op) {
 		{
 			FillFlags();
 			if (!inst_op1_w) {
-				SETFLAGBIT(ZF,true);
+				SETFLAGBIT(FLAG_ZF, true);
 				goto nextopcode;
 			} else {
 				Bitu count=15;
@@ -543,7 +543,7 @@ switch (inst.code.op) {
 					count--;inst_op1_w<<=1;
 				}
 				inst_op1_d=count;
-				SETFLAGBIT(ZF,false);
+				SETFLAGBIT(FLAG_ZF,false);
 			}
 		}
 		break;
@@ -551,7 +551,7 @@ switch (inst.code.op) {
 		{
 			FillFlags();
 			if (!inst_op1_d) {
-				SETFLAGBIT(ZF,true);
+				SETFLAGBIT(FLAG_ZF,true);
 				goto nextopcode;
 			} else {
 				Bitu count=31;
@@ -560,46 +560,46 @@ switch (inst.code.op) {
 					count--;inst_op1_d<<=1;
 				}
 				inst_op1_d=count;
-				SETFLAGBIT(ZF,false);
+				SETFLAGBIT(FLAG_ZF,false);
 			}
 		}
 		break;
 	case O_BTw:
 		FillFlags();
-		SETFLAGBIT(CF,(inst_op1_d & (1 << (inst_op2_d & 15))));
+		SETFLAGBIT(FLAG_CF,(inst_op1_d & (1 << (inst_op2_d & 15))));
 		break;
 	case O_BTSw:
 		FillFlags();
-		SETFLAGBIT(CF,(inst_op1_d & (1 << (inst_op2_d & 15))));
+		SETFLAGBIT(FLAG_CF,(inst_op1_d & (1 << (inst_op2_d & 15))));
 		inst_op1_d|=(1 << (inst_op2_d & 15));
 		break;
 	case O_BTCw:
 		FillFlags();
-		SETFLAGBIT(CF,(inst_op1_d & (1 << (inst_op2_d & 15))));
+		SETFLAGBIT(FLAG_CF, (inst_op1_d & (1 << (inst_op2_d & 15))));
 		inst_op1_d^=(1 << (inst_op2_d & 15));
 		break;
 	case O_BTRw:
 		FillFlags();
-		SETFLAGBIT(CF,(inst_op1_d & (1 << (inst_op2_d & 15))));
+		SETFLAGBIT(FLAG_CF, (inst_op1_d & (1 << (inst_op2_d & 15))));
 		inst_op1_d&=~(1 << (inst_op2_d & 15));
 		break;
 	case O_BTd:
 		FillFlags();
-		SETFLAGBIT(CF,(inst_op1_d & (1 << (inst_op2_d & 31))));
+		SETFLAGBIT(FLAG_CF, (inst_op1_d & (1 << (inst_op2_d & 31))));
 		break;
 	case O_BTSd:
 		FillFlags();
-		SETFLAGBIT(CF,(inst_op1_d & (1 << (inst_op2_d & 31))));
+		SETFLAGBIT(FLAG_CF, (inst_op1_d & (1 << (inst_op2_d & 31))));
 		inst_op1_d|=(1 << (inst_op2_d & 31));
 		break;
 	case O_BTCd:
 		FillFlags();
-		SETFLAGBIT(CF,(inst_op1_d & (1 << (inst_op2_d & 31))));
+		SETFLAGBIT(FLAG_CF, (inst_op1_d & (1 << (inst_op2_d & 31))));
 		inst_op1_d^=(1 << (inst_op2_d & 31));
 		break;
 	case O_BTRd:
 		FillFlags();
-		SETFLAGBIT(CF,(inst_op1_d & (1 << (inst_op2_d & 31))));
+		SETFLAGBIT(FLAG_CF, (inst_op1_d & (1 << (inst_op2_d & 31))));
 		inst_op1_d&=~(1 << (inst_op2_d & 31));
 		break;
 	case O_BSWAPw:
@@ -616,11 +616,11 @@ switch (inst.code.op) {
 		if (inst_op1_d==reg_eax) {
 			inst_op1_d=reg_32(inst.rm_index);
 			if (inst.rm<0xc0) SaveMd(inst.rm_eaa,inst_op1_d);	// early write-pf
-			SETFLAGBIT(ZF,1);
+			SETFLAGBIT(FLAG_ZF, true);
 		} else {
 			if (inst.rm<0xc0) SaveMd(inst.rm_eaa,inst_op1_d);	// early write-pf
 			reg_eax=inst_op1_d;
-			SETFLAGBIT(ZF,0);
+			SETFLAGBIT(FLAG_ZF, false);
 		}
 		break;
 	case O_FPU:

@@ -588,7 +588,7 @@ bool DOS_Shell::Execute(char * name,char * args) {
 		//Paramblock
 		SegSet16(es,SegValue(ss));
 		reg_bx=reg_sp;
-		SETFLAGBIT(IF,false);
+		SETFLAGBIT(FLAG_IF, false);
 		CALLBACK_RunRealInt(0x21);
 		/* Restore CS:IP and the stack */
 		reg_sp+=0x200;

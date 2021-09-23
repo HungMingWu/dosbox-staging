@@ -423,21 +423,21 @@ l_M_Ed:
 		if (CPU_STI()) RunException();
 		goto nextopcode;
 	case D_STC:
-		FillFlags();SETFLAGBIT(CF,true);
+		FillFlags();SETFLAGBIT(FLAG_CF,true);
 		goto nextopcode;
 	case D_CLC:
-		FillFlags();SETFLAGBIT(CF,false);
+		FillFlags();SETFLAGBIT(FLAG_CF,false);
 		goto nextopcode;
 	case D_CMC:
 		FillFlags();
-		SETFLAGBIT(CF,!(reg_flags & FLAG_CF));
+		SETFLAGBIT(FLAG_CF, !(reg_flags & FLAG_CF));
 		goto nextopcode;
 	case D_CLD:
-		SETFLAGBIT(DF,false);
+		SETFLAGBIT(FLAG_DF, false);
 		cpu.direction=1;
 		goto nextopcode;
 	case D_STD:
-		SETFLAGBIT(DF,true);
+		SETFLAGBIT(FLAG_DF, true);
 		cpu.direction=-1;
 		goto nextopcode;
 	case D_PUSHF:

@@ -134,6 +134,14 @@ void Descriptor:: Save(PhysPt address) {
 }
 
 
+void SETFLAGBIT(Bitu flag, bool test)
+{
+	if (test)
+		cpu_regs.flags |= flag;
+	else
+		cpu_regs.flags &= ~flag;
+}
+
 void CPU_Push16(Bitu value) {
 	Bit32u new_esp=(reg_esp&cpu.stack.notmask)|((reg_esp-2)&cpu.stack.mask);
 	mem_writew(SegPhys(ss) + (new_esp & cpu.stack.mask) ,value);
@@ -185,7 +193,7 @@ bool CPU_CLI(void) {
 	if (cpu.pmode && ((!GETFLAG(VM) && (GETFLAG_IOPL<cpu.cpl)) || (GETFLAG(VM) && (GETFLAG_IOPL<3)))) {
 		return CPU_PrepareException(EXCEPTION_GP,0);
 	} else {
-		SETFLAGBIT(IF,false);
+		SETFLAGBIT(FLAG_IF, false);
 		return false;
 	}
 }
@@ -194,7 +202,7 @@ bool CPU_STI(void) {
 	if (cpu.pmode && ((!GETFLAG(VM) && (GETFLAG_IOPL<cpu.cpl)) || (GETFLAG(VM) && (GETFLAG_IOPL<3)))) {
 		return CPU_PrepareException(EXCEPTION_GP,0);
 	} else {
- 		SETFLAGBIT(IF,true);
+		SETFLAGBIT(FLAG_IF, true);
 		return false;
 	}
 }
@@ -578,8 +586,8 @@ void CPU_Interrupt(Bitu num,Bitu type,Bitu oldeip) {
 		CPU_Push16(reg_flags & 0xffff);
 		CPU_Push16(SegValue(cs));
 		CPU_Push16(oldeip);
-		SETFLAGBIT(IF,false);
-		SETFLAGBIT(TF,false);
+		SETFLAGBIT(FLAG_IF, false);
+		SETFLAGBIT(FLAG_TF, false);
 		/* Get the new CS:IP from vector table */
 		PhysPt base=cpu.idt.GetBase();
 		reg_eip=mem_readw(base+(num << 2));
@@ -742,11 +750,11 @@ do_interrupt:
 				reg_eip=gate_off;
 
 				if (!(gate.Type()&1)) {
-					SETFLAGBIT(IF,false);
+					SETFLAGBIT(FLAG_IF, false);
 				}
-				SETFLAGBIT(TF,false);
-				SETFLAGBIT(NT,false);
-				SETFLAGBIT(VM,false);
+				SETFLAGBIT(FLAG_TF, false);
+				SETFLAGBIT(FLAG_NT, false);
+				SETFLAGBIT(FLAG_VM, false);
 				LOG(LOG_CPU,LOG_NORMAL)("INT:Gate to %X:%X big %d %s",gate_sel,gate_off,cs_desc.Big(),gate.Type() & 0x8 ? "386" : "286");
 				return;
 			}
@@ -1759,9 +1767,9 @@ void CPU_ARPL(Bitu & dest_sel,Bitu src_sel) {
 	if ((dest_sel & 3) < (src_sel & 3)) {
 		dest_sel=(dest_sel & 0xfffc) + (src_sel & 3);
 //		dest_sel|=0xff3f0000;
-		SETFLAGBIT(ZF,true);
+		SETFLAGBIT(FLAG_ZF, true);
 	} else {
-		SETFLAGBIT(ZF,false);
+		SETFLAGBIT(FLAG_ZF, false);
 	} 
 }
 	
@@ -1795,13 +1803,13 @@ void CPU_LAR(Bitu selector,Bitu & ar) {
 				case DESC_CODE_R_C_A:	case DESC_CODE_R_C_NA:
 					/* Valid descriptor */
 					ar=desc.saved.fill[1] & 0x00ffff00;
-					SETFLAGBIT(ZF,true);
+					SETFLAGBIT(FLAG_ZF, true);
 					return;
 			}
 		}
 	}
 
-	SETFLAGBIT(ZF,false);
+	SETFLAGBIT(FLAG_ZF, false);
 }
 
 void CPU_LSL(Bitu selector,Bitu & limit) {
@@ -1831,24 +1839,24 @@ void CPU_LSL(Bitu selector,Bitu & limit) {
 				case DESC_CODE_N_C_A:	case DESC_CODE_N_C_NA:
 				case DESC_CODE_R_C_A:	case DESC_CODE_R_C_NA:
 					limit=desc.GetLimit();
-					SETFLAGBIT(ZF,true);
+					SETFLAGBIT(FLAG_ZF, true);
 					return;
 			}
 		}
 	}
 
-	SETFLAGBIT(ZF,false);
+	SETFLAGBIT(FLAG_ZF, false);
 }
 
 void CPU_VERR(Bitu selector) {
 	FillFlags();
 	if (selector == 0) {
-		SETFLAGBIT(ZF,false);
+		SETFLAGBIT(FLAG_ZF, false);
 		return;
 	}
 	Descriptor desc;Bitu rpl=selector & 3;
 	if (!cpu.gdt.GetDescriptor(selector,desc)){
-		SETFLAGBIT(ZF,false);
+		SETFLAGBIT(FLAG_ZF, false);
 		return;
 	}
 	switch (desc.Type()){
@@ -1862,41 +1870,41 @@ void CPU_VERR(Bitu selector) {
 
 	case DESC_CODE_R_NC_A:		case DESC_CODE_R_NC_NA:
 		if (desc.DPL()<cpu.cpl || desc.DPL() < rpl) {
-			SETFLAGBIT(ZF,false);
+			SETFLAGBIT(FLAG_ZF, false);
 			return;
 		}
 		break;
 	default:
-		SETFLAGBIT(ZF,false);
+		SETFLAGBIT(FLAG_ZF, false);
 		return;
 	}
-	SETFLAGBIT(ZF,true);
+	SETFLAGBIT(FLAG_ZF, true);
 }
 
 void CPU_VERW(Bitu selector) {
 	FillFlags();
 	if (selector == 0) {
-		SETFLAGBIT(ZF,false);
+		SETFLAGBIT(FLAG_ZF, false);
 		return;
 	}
 	Descriptor desc;Bitu rpl=selector & 3;
 	if (!cpu.gdt.GetDescriptor(selector,desc)){
-		SETFLAGBIT(ZF,false);
+		SETFLAGBIT(FLAG_ZF, false);
 		return;
 	}
 	switch (desc.Type()){
 	case DESC_DATA_EU_RW_NA:	case DESC_DATA_EU_RW_A:
 	case DESC_DATA_ED_RW_NA:	case DESC_DATA_ED_RW_A:
 		if (desc.DPL()<cpu.cpl || desc.DPL() < rpl) {
-			SETFLAGBIT(ZF,false);
+			SETFLAGBIT(FLAG_ZF, false);
 			return;
 		}
 		break;
 	default:
-		SETFLAGBIT(ZF,false);
+		SETFLAGBIT(FLAG_ZF, false);
 		return;
 	}
-	SETFLAGBIT(ZF,true);
+	SETFLAGBIT(FLAG_ZF, true);
 }
 
 bool CPU_SetSegGeneral(SegNames seg,Bitu value) {
