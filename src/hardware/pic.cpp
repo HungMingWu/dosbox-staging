@@ -516,8 +516,8 @@ void PIC_RemoveEvents(PIC_EventHandler handler) {
 
 bool PIC_RunQueue(void) {
 	/* Check to see if a new millisecond needs to be started */
-	CPU_CycleLeft+=CPU_Cycles;
-	CPU_Cycles=0;
+	CPU_CycleLeft+=std::exchange(CPU_Cycles, 0);
+
 	if (CPU_CycleLeft<=0) {
 		return false;
 	}
@@ -541,18 +541,15 @@ bool PIC_RunQueue(void) {
 	InEventService = false;
 
 	/* Check when to set the new cycle end */
-	if (pic_queue.next_entry) {
+	CPU_Cycles = [&] {
+		if (!pic_queue.next_entry) return CPU_CycleLeft;
 		auto cycles = static_cast<int32_t>(
-		        pic_queue.next_entry->index * static_cast<double>(CPU_CycleMax) -
-		        index_nd_f);
+			pic_queue.next_entry->index * static_cast<double>(CPU_CycleMax) -
+			index_nd_f);
 		if (GCC_UNLIKELY(!cycles))
 			cycles = 1;
-		if (cycles < CPU_CycleLeft) {
-			CPU_Cycles = cycles;
-		} else {
-			CPU_Cycles=CPU_CycleLeft;
-		}
-	} else CPU_Cycles=CPU_CycleLeft;
+		return std::min(cycles, CPU_CycleLeft);
+	}();
 	CPU_CycleLeft-=CPU_Cycles;
 	if (PIC_IRQCheck) PIC_runIRQs();
 	return true;
