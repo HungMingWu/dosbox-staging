@@ -54,28 +54,28 @@ static INLINE Bit32s Fetchds() {
 
 //TODO Could probably make all byte operands fast?
 #define JumpCond16_b(COND) {						\
-	SAVEIP;											\
+	SAVEIP();											\
 	if (COND) reg_ip+=Fetchbs();					\
 	reg_ip+=1;										\
 	continue;										\
 }
 
 #define JumpCond16_w(COND) {						\
-	SAVEIP;											\
+	SAVEIP();											\
 	if (COND) reg_ip+=Fetchws();					\
 	reg_ip+=2;										\
 	continue;										\
 }
 
 #define JumpCond32_b(COND) {						\
-	SAVEIP;											\
+	SAVEIP();											\
 	if (COND) reg_eip+=Fetchbs();					\
 	reg_eip+=1;										\
 	continue;										\
 }
 
 #define JumpCond32_d(COND) {						\
-	SAVEIP;											\
+	SAVEIP();											\
 	if (COND) reg_eip+=Fetchds();					\
 	reg_eip+=4;										\
 	continue;										\

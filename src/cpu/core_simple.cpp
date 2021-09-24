@@ -99,8 +99,8 @@ static struct {
 
 inline PhysPt SegBase(SegNames c) { return SegPhys(c); }
 inline PhysPt GETIP() { return core.cseip - SegBase(cs) - MemBase; }
+inline void SAVEIP() { reg_eip = GETIP(); }
 
-#define SAVEIP		reg_eip=GETIP();
 #define LOADIP		core.cseip=(MemBase+SegBase(cs)+reg_eip);
 
 #define BaseDS		core.base_ds
@@ -178,12 +178,12 @@ restart_opcode:
 			CPU_Exception(6,0);
 			continue;
 		}
-		SAVEIP;
+		SAVEIP();
 	}
 	FillFlags();
 	return CBRET_NONE;
 decode_end:
-	SAVEIP;
+	SAVEIP();
 	FillFlags();
 	return CBRET_NONE;
 }

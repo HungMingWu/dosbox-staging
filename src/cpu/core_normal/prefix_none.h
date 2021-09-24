@@ -901,7 +901,7 @@
 	CASE_W(0xe8)												/* CALL Jw */
 		{ 
 			Bit16u addip=Fetchws();
-			SAVEIP;
+			SAVEIP();
 			Push_16(reg_eip);
 			reg_eip=(Bit16u)(reg_eip+addip);
 			continue;
@@ -909,7 +909,7 @@
 	CASE_W(0xe9)												/* JMP Jw */
 		{ 
 			Bit16u addip=Fetchws();
-			SAVEIP;
+			SAVEIP();
 			reg_eip=(Bit16u)(reg_eip+addip);
 			continue;
 		}
@@ -930,7 +930,7 @@
 	CASE_W(0xeb)												/* JMP Jb */
 		{ 
 			Bit16s addip=Fetchbs();
-			SAVEIP;
+			SAVEIP();
 			reg_eip=(Bit16u)(reg_eip+addip);
 			continue;
 		}
@@ -1100,7 +1100,7 @@
 			case 0x07:										/* CallBack */
 				{
 					Bitu cb=Fetchw();
-					FillFlags();SAVEIP;
+					FillFlags();SAVEIP();
 					return cb;
 				}
 			default:
