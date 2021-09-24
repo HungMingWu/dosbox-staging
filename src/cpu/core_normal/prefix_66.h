@@ -570,7 +570,7 @@
 	CASE_D(0xe8)												/* CALL Jd */
 		{ 
 			Bit32s addip=Fetchds();
-			SAVEIP;
+			SAVEIP();
 			Push_32(reg_eip);
 			reg_eip+=addip;
 			continue;
@@ -578,7 +578,7 @@
 	CASE_D(0xe9)												/* JMP Jd */
 		{ 
 			Bit32s addip=Fetchds();
-			SAVEIP;
+			SAVEIP();
 			reg_eip+=addip;
 			continue;
 		}
@@ -599,7 +599,7 @@
 	CASE_D(0xeb)												/* JMP Jb */
 		{ 
 			Bit32s addip=Fetchbs();
-			SAVEIP;
+			SAVEIP();
 			reg_eip+=addip;
 			continue;
 		}
