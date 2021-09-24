@@ -388,7 +388,7 @@
 		{ 
 			Bit32u newip=Fetchd();Bit16u newcs=Fetchw();
 			FillFlags();
-			CPU_CALL(true,newcs,newip,GETIP);
+			CPU_CALL(true,newcs,newip,GETIP());
 #if CPU_TRAP_CHECK
 			if (GETFLAG(TF)) {	
 				cpudecoder=CPU_TRAP_DECODER;
@@ -502,18 +502,18 @@
 		{ 
 			Bitu words=Fetchw();
 			FillFlags();
-			CPU_RET(true,words,GETIP);
+			CPU_RET(true,words,GETIP());
 			continue;
 		}
 	CASE_D(0xcb)												/* RETF */			
 		{ 
 			FillFlags();
-            CPU_RET(true,0,GETIP);
+            CPU_RET(true,0,GETIP());
 			continue;
 		}
 	CASE_D(0xcf)												/* IRET */
 		{
-			CPU_IRET(true,GETIP);
+			CPU_IRET(true,GETIP());
 #if CPU_TRAP_CHECK
 			if (GETFLAG(TF)) {	
 				cpudecoder=CPU_TRAP_DECODER;
@@ -587,7 +587,7 @@
 			Bit32u newip=Fetchd();
 			Bit16u newcs=Fetchw();
 			FillFlags();
-			CPU_JMP(true,newcs,newip,GETIP);
+			CPU_JMP(true,newcs,newip,GETIP());
 #if CPU_TRAP_CHECK
 			if (GETFLAG(TF)) {	
 				cpudecoder=CPU_TRAP_DECODER;
@@ -668,7 +668,7 @@
 			case 0x02:											/* CALL NEAR Ed */
 				if (rm >= 0xc0 ) {GetEArd;reg_eip=*eard;}
 				else {GetEAa;reg_eip=LoadMd(eaa);}
-				Push_32(GETIP);
+				Push_32(GETIP());
 				continue;
 			case 0x03:											/* CALL FAR Ed */
 				{
@@ -677,7 +677,7 @@
 					Bit32u newip=LoadMd(eaa);
 					Bit16u newcs=LoadMw(eaa+4);
 					FillFlags();
-					CPU_CALL(true,newcs,newip,GETIP);
+					CPU_CALL(true,newcs,newip,GETIP());
 #if CPU_TRAP_CHECK
 					if (GETFLAG(TF)) {	
 						cpudecoder=CPU_TRAP_DECODER;
@@ -697,7 +697,7 @@
 					Bit32u newip=LoadMd(eaa);
 					Bit16u newcs=LoadMw(eaa+4);
 					FillFlags();
-					CPU_JMP(true,newcs,newip,GETIP);
+					CPU_JMP(true,newcs,newip,GETIP());
 #if CPU_TRAP_CHECK
 					if (GETFLAG(TF)) {	
 						cpudecoder=CPU_TRAP_DECODER;

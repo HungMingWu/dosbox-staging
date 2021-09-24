@@ -102,11 +102,12 @@ static struct {
 	GetEAHandler * ea_table;
 } core;
 
-#define GETIP		(core.cseip-SegBase(cs))
-#define SAVEIP		reg_eip=GETIP;
+inline PhysPt SegBase(SegNames c) { return SegPhys(c); }
+inline PhysPt GETIP() { return core.cseip - SegBase(cs); }
+#define SAVEIP		reg_eip=GETIP();
 #define LOADIP		core.cseip=(SegBase(cs)+reg_eip);
 
-#define SegBase(c)	SegPhys(c)
+
 #define BaseDS		core.base_ds
 #define BaseSS		core.base_ss
 

@@ -563,7 +563,7 @@
 		{ 
 			FillFlags();
 			Bit16u newip=Fetchw();Bit16u newcs=Fetchw();
-			CPU_CALL(false,newcs,newip,GETIP);
+			CPU_CALL(false,newcs,newip,GETIP());
 #if CPU_TRAP_CHECK
 			if (GETFLAG(TF)) {	
 				cpudecoder=CPU_TRAP_DECODER;
@@ -735,12 +735,12 @@
 		{
 			Bitu words=Fetchw();
 			FillFlags();
-			CPU_RET(false,words,GETIP);
+			CPU_RET(false,words,GETIP());
 			continue;
 		}
 	CASE_W(0xcb)												/* RETF */			
 		FillFlags();
-		CPU_RET(false,0,GETIP);
+		CPU_RET(false,0,GETIP());
 		continue;
 	CASE_B(0xcc)												/* INT3 */
 #if C_DEBUG	
@@ -748,7 +748,7 @@
 		if (DEBUG_Breakpoint())
 			return debugCallback;
 #endif			
-		CPU_SW_Interrupt_NoIOPLCheck(3,GETIP);
+		CPU_SW_Interrupt_NoIOPLCheck(3,GETIP());
 #if CPU_TRAP_CHECK
 		cpu.trap_skip=true;
 #endif
@@ -762,7 +762,7 @@
 				return debugCallback;
 			}
 #endif
-			CPU_SW_Interrupt(num,GETIP);
+			CPU_SW_Interrupt(num,GETIP());
 #if CPU_TRAP_CHECK
 			cpu.trap_skip=true;
 #endif
@@ -770,7 +770,7 @@
 		}
 	CASE_B(0xce)												/* INTO */
 		if (get_OF()) {
-			CPU_SW_Interrupt(4,GETIP);
+			CPU_SW_Interrupt(4,GETIP());
 #if CPU_TRAP_CHECK
 			cpu.trap_skip=true;
 #endif
@@ -779,7 +779,7 @@
 		break;
 	CASE_W(0xcf)												/* IRET */
 		{
-			CPU_IRET(false,GETIP);
+			CPU_IRET(false,GETIP());
 #if CPU_TRAP_CHECK
 			if (GETFLAG(TF)) {	
 				cpudecoder=CPU_TRAP_DECODER;
@@ -918,7 +918,7 @@
 			Bit16u newip=Fetchw();
 			Bit16u newcs=Fetchw();
 			FillFlags();
-			CPU_JMP(false,newcs,newip,GETIP);
+			CPU_JMP(false,newcs,newip,GETIP());
 #if CPU_TRAP_CHECK
 			if (GETFLAG(TF)) {	
 				cpudecoder=CPU_TRAP_DECODER;
@@ -954,7 +954,7 @@
 		LOG(LOG_CPU,LOG_NORMAL)("CPU:LOCK"); /* FIXME: see case D_LOCK in core_full/load.h */
 		break;
 	CASE_B(0xf1)												/* ICEBP */
-		CPU_SW_Interrupt_NoIOPLCheck(1,GETIP);
+		CPU_SW_Interrupt_NoIOPLCheck(1,GETIP());
 #if CPU_TRAP_CHECK
 		cpu.trap_skip=true;
 #endif
@@ -968,7 +968,7 @@
 	CASE_B(0xf4)												/* HLT */
 		if (cpu.pmode && cpu.cpl) EXCEPTION(EXCEPTION_GP);
 		FillFlags();
-		CPU_HLT(GETIP);
+		CPU_HLT(GETIP());
 		return CBRET_NONE;		//Needs to return for hlt cpu core
 	CASE_B(0xf5)												/* CMC */
 		FillFlags();
@@ -1122,7 +1122,7 @@
 			case 0x02:										/* CALL Ev */
 				if (rm >= 0xc0 ) {GetEArw;reg_eip=*earw;}
 				else {GetEAa;reg_eip=LoadMw(eaa);}
-				Push_16(GETIP);
+				Push_16(GETIP());
 				continue;
 			case 0x03:										/* CALL Ep */
 				{
@@ -1131,7 +1131,7 @@
 					Bit16u newip=LoadMw(eaa);
 					Bit16u newcs=LoadMw(eaa+2);
 					FillFlags();
-					CPU_CALL(false,newcs,newip,GETIP);
+					CPU_CALL(false,newcs,newip,GETIP());
 #if CPU_TRAP_CHECK
 					if (GETFLAG(TF)) {	
 						cpudecoder=CPU_TRAP_DECODER;
@@ -1152,7 +1152,7 @@
 					Bit16u newip=LoadMw(eaa);
 					Bit16u newcs=LoadMw(eaa+2);
 					FillFlags();
-					CPU_JMP(false,newcs,newip,GETIP);
+					CPU_JMP(false,newcs,newip,GETIP());
 #if CPU_TRAP_CHECK
 					if (GETFLAG(TF)) {	
 						cpudecoder=CPU_TRAP_DECODER;
