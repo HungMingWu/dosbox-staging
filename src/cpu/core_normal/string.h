@@ -50,7 +50,7 @@ static void DoString(STRING_OP type) {
 			count_left=count-CPU_Cycles;
 			count=CPU_Cycles;
 			CPU_Cycles=0;
-			LOADIP;		//RESET IP to the start
+			LOADIP();		//RESET IP to the start
 		} else {
 			/* Won't interrupt scas and cmps instruction since they can interrupt themselves */
 			if ((count<=1) && (CPU_Cycles<=1)) CPU_Cycles--;

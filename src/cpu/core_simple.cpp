@@ -100,8 +100,7 @@ static struct {
 inline PhysPt SegBase(SegNames c) { return SegPhys(c); }
 inline PhysPt GETIP() { return core.cseip - SegBase(cs) - MemBase; }
 inline void SAVEIP() { reg_eip = GETIP(); }
-
-#define LOADIP		core.cseip=(MemBase+SegBase(cs)+reg_eip);
+inline void LOADIP() { core.cseip = (MemBase + SegBase(cs) + reg_eip); }
 
 #define BaseDS		core.base_ds
 #define BaseSS		core.base_ss
@@ -137,7 +136,7 @@ static inline Bit32u Fetchd() {
 
 Bits CPU_Core_Simple_Run(void) {
 	while (CPU_Cycles-->0) {
-		LOADIP;
+		LOADIP();
 		core.opcode_index=cpu.code.big*0x200;
 		core.prefixes=cpu.code.big;
 		core.ea_table=&EATable[cpu.code.big*256];
@@ -165,7 +164,7 @@ restart_opcode:
 #if C_DEBUG	
 			{
 				Bitu len=(GETIP-reg_eip);
-				LOADIP;
+				LOADIP();
 				if (len>16) len=16;
 				char tempcode[16*2+1];char * writecode=tempcode;
 				for (;len>0;len--) {
