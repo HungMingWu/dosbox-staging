@@ -159,7 +159,9 @@
 	CASE_D(0x62)												/* BOUND Ed */
 		{
 			Bit32s bound_min, bound_max;
-			GetRMrd;GetEAa;
+			Bit8u rm = Fetchb();
+			Bit32u *rmrd = Getrd(rm);	
+			GetEAa;
 			bound_min=LoadMd(eaa);
 			bound_max=LoadMd(eaa+4);
 			if ( (((Bit32s)*rmrd) < bound_min) || (((Bit32s)*rmrd) > bound_max) ) {
@@ -170,15 +172,18 @@
 	CASE_D(0x63)												/* ARPL Ed,Rd */
 		{
 			if (((cpu.pmode) && (reg_flags & FLAG_VM)) || (!cpu.pmode)) goto illegal_opcode;
-			GetRMrw;
-			if (rm >= 0xc0 ) {
-				GetEArd;Bitu new_sel=(Bit16u)*eard;
-				CPU_ARPL(new_sel,*rmrw);
-				*eard=(Bit32u)new_sel;
+	        Bit8u rm = Fetchb();
+	        Bit16u *rmrw = Getrw(rm);
+			if (rm >= 0xc0) {
+				Bit32u *eard = GetEArd(rm);
+				Bitu new_sel = (Bit16u)*eard;
+				CPU_ARPL(new_sel, *rmrw);
+				*eard = (Bit32u)new_sel;
 			} else {
-				GetEAa;Bitu new_sel=LoadMw(eaa);
-				CPU_ARPL(new_sel,*rmrw);
-				SaveMd(eaa,(Bit32u)new_sel);
+				GetEAa;
+				Bitu new_sel = LoadMw(eaa);
+				CPU_ARPL(new_sel, *rmrw);
+				SaveMd(eaa, (Bit32u)new_sel);
 			}
 		}
 		break;
@@ -232,9 +237,10 @@
 		JumpCond32_b(TFLG_NLE);break;
 	CASE_D(0x81)												/* Grpl Ed,Id */
 		{
-			GetRM;Bitu which=(rm>>3)&7;
+			Bit8u rm = Fetchb();Bitu which=(rm>>3)&7;
 			if (rm >= 0xc0) {
-				GetEArd;Bit32u id=Fetchd();
+				Bit32u *eard = GetEArd(rm);
+				Bit32u id = Fetchd();
 				switch (which) {
 				case 0x00:ADDD(*eard,id,LoadRd,SaveRd);break;
 				case 0x01: ORD(*eard,id,LoadRd,SaveRd);break;
@@ -246,7 +252,8 @@
 				case 0x07:CMPD(*eard,id,LoadRd,SaveRd);break;
 				}
 			} else {
-				GetEAa;Bit32u id=Fetchd();
+				GetEAa;
+				Bit32u id = Fetchd();
 				switch (which) {
 				case 0x00:ADDD(eaa,id,LoadMd,SaveMd);break;
 				case 0x01: ORD(eaa,id,LoadMd,SaveMd);break;
@@ -262,9 +269,10 @@
 		break;
 	CASE_D(0x83)												/* Grpl Ed,Ix */
 		{
-			GetRM;Bitu which=(rm>>3)&7;
+			Bit8u rm = Fetchb();Bitu which=(rm>>3)&7;
 			if (rm >= 0xc0) {
-				GetEArd;Bit32u id=(Bit32s)Fetchbs();
+				Bit32u *eard = GetEArd(rm);
+				Bit32u id = (Bit32s)Fetchbs();
 				switch (which) {
 				case 0x00:ADDD(*eard,id,LoadRd,SaveRd);break;
 				case 0x01: ORD(*eard,id,LoadRd,SaveRd);break;
@@ -276,7 +284,8 @@
 				case 0x07:CMPD(*eard,id,LoadRd,SaveRd);break;
 				}
 			} else {
-				GetEAa;Bit32u id=(Bit32s)Fetchbs();
+				GetEAa;
+				Bit32u id = (Bit32s)Fetchbs();
 				switch (which) {
 				case 0x00:ADDD(eaa,id,LoadMd,SaveMd);break;
 				case 0x01: ORD(eaa,id,LoadMd,SaveMd);break;
@@ -293,29 +302,50 @@
 	CASE_D(0x85)												/* TEST Ed,Gd */
 		RMEdGd(TESTD);break;
 	CASE_D(0x87)												/* XCHG Ed,Gd */
-		{	
-			GetRMrd;Bit32u oldrmrd=*rmrd;
-			if (rm >= 0xc0 ) {GetEArd;*rmrd=*eard;*eard=oldrmrd;}
-			else {GetEAa;*rmrd=LoadMd(eaa);SaveMd(eaa,oldrmrd);}
+		{
+			Bit8u rm = Fetchb();
+			Bit32u *rmrd = Getrd(rm);	
+			Bit32u oldrmrd=*rmrd;
+			if (rm >= 0xc0) {
+				Bit32u *eard = GetEArd(rm);
+				*rmrd = *eard;
+				*eard = oldrmrd;
+			} else {
+				GetEAa;
+				*rmrd = LoadMd(eaa);
+				SaveMd(eaa, oldrmrd);
+			}
 			break;
 		}
 	CASE_D(0x89)												/* MOV Ed,Gd */
-		{	
-			GetRMrd;
-			if (rm >= 0xc0 ) {GetEArd;*eard=*rmrd;}
-			else {GetEAa;SaveMd(eaa,*rmrd);}
+		{
+			Bit8u rm = Fetchb();
+	        Bit32u *rmrd = Getrd(rm);
+			if (rm >= 0xc0) {
+				Bit32u *eard = GetEArd(rm);
+				*eard = *rmrd;
+			} else {
+				GetEAa;
+				SaveMd(eaa, *rmrd);
+			}
 			break;
 		}
 	CASE_D(0x8b)												/* MOV Gd,Ed */
-		{	
-			GetRMrd;
-			if (rm >= 0xc0 ) {GetEArd;*rmrd=*eard;}
-			else {GetEAa;*rmrd=LoadMd(eaa);}
+		{
+			Bit8u rm = Fetchb();
+			Bit32u *rmrd = Getrd(rm);
+			if (rm >= 0xc0) {
+				Bit32u *eard = GetEArd(rm);
+				*rmrd = *eard;
+			} else {
+				GetEAa;
+				*rmrd = LoadMd(eaa);
+			}
 			break;
 		}
 	CASE_D(0x8c)												/* Mov Ew,Sw */
 			{
-				GetRM;Bit16u val;Bitu which=(rm>>3)&7;
+				Bit8u rm = Fetchb();Bit16u val;Bitu which=(rm>>3)&7;
 				switch (which) {
 				case 0x00:					/* MOV Ew,ES */
 					val=SegValue(es);break;
@@ -333,13 +363,19 @@
 					LOG(LOG_CPU,LOG_ERROR)("CPU:8c:Illegal RM Byte");
 					goto illegal_opcode;
 				}
-				if (rm >= 0xc0 ) {GetEArd;*eard=val;}
-				else {GetEAa;SaveMw(eaa,val);}
+				if (rm >= 0xc0) {
+					Bit32u *eard = GetEArd(rm);
+					*eard = val;
+				} else {
+					GetEAa;
+					SaveMw(eaa, val);
+				}
 				break;
 			}	
 	CASE_D(0x8d)												/* LEA Gd */
 		{
-			GetRMrd;
+	        Bit8u rm = Fetchb();
+	        Bit32u *rmrd = Getrd(rm);
 			if (rm >= 0xc0) goto illegal_opcode;
 			//Little hack to always use segprefixed version
 			BaseDS=BaseSS=0;
@@ -353,9 +389,14 @@
 	CASE_D(0x8f)												/* POP Ed */
 		{
 			Bit32u val=Pop_32();
-			GetRM;
-			if (rm >= 0xc0 ) {GetEArd;*eard=val;}
-			else {GetEAa;SaveMd(eaa,val);}
+			Bit8u rm = Fetchb();
+			if (rm >= 0xc0) {
+				Bit32u *eard = GetEArd(rm);
+				*eard = val;
+			} else {
+				GetEAa;
+				SaveMd(eaa, val);
+			}
 			break;
 		}
 	CASE_D(0x91)												/* XCHG ECX,EAX */
@@ -462,8 +503,9 @@
 		reg_eip=Pop_32();
 		continue;
 	CASE_D(0xc4)												/* LES */
-		{	
-			GetRMrd;
+		{
+			Bit8u rm = Fetchb();
+			Bit32u *rmrd = Getrd(rm);	
 			if (rm >= 0xc0) goto illegal_opcode;
 			GetEAa;
 			if (CPU_SetSegGeneral(es,LoadMw(eaa+4))) RUNEXCEPTION();
@@ -472,7 +514,8 @@
 		}
 	CASE_D(0xc5)												/* LDS */
 		{	
-			GetRMrd;
+			Bit8u rm = Fetchb();
+	        Bit32u *rmrd = Getrd(rm);	
 			if (rm >= 0xc0) goto illegal_opcode;
 			GetEAa;
 			if (CPU_SetSegGeneral(ds,LoadMw(eaa+4))) RUNEXCEPTION();
@@ -481,9 +524,14 @@
 		}
 	CASE_D(0xc7)												/* MOV Ed,Id */
 		{
-			GetRM;
-			if (rm >= 0xc0) {GetEArd;*eard=Fetchd();}
-			else {GetEAa;SaveMd(eaa,Fetchd());}
+			Bit8u rm = Fetchb();
+			if (rm >= 0xc0) {
+				Bit32u *eard = GetEArd(rm);
+				*eard = Fetchd();
+			} else {
+				GetEAa;
+				SaveMd(eaa, Fetchd());
+			}
 			break;
 		}
 	CASE_D(0xc8)												/* ENTER Iw,Ib */
@@ -613,30 +661,44 @@
 		break;
 	CASE_D(0xf7)												/* GRP3 Ed(,Id) */
 		{ 
-			GetRM;Bitu which=(rm>>3)&7;
+			Bit8u rm = Fetchb();Bitu which=(rm>>3)&7;
 			switch (which) {
 			case 0x00:											/* TEST Ed,Id */
 			case 0x01:											/* TEST Ed,Id Undocumented*/
 				{
-					if (rm >= 0xc0 ) {GetEArd;TESTD(*eard,Fetchd(),LoadRd,SaveRd);}
-					else {GetEAa;TESTD(eaa,Fetchd(),LoadMd,SaveMd);}
+					if (rm >= 0xc0) {
+						Bit32u *eard = GetEArd(rm);
+						TESTD(*eard,Fetchd(),LoadRd,SaveRd);
+					}else {
+						GetEAa;
+						TESTD(eaa,Fetchd(),LoadMd,SaveMd);
+					}
 					break;
 				}
 			case 0x02:											/* NOT Ed */
 				{
-					if (rm >= 0xc0 ) {GetEArd;*eard=~*eard;}
-					else {GetEAa;SaveMd(eaa,~LoadMd(eaa));}
+					if (rm >= 0xc0) {
+						Bit32u *eard = GetEArd(rm);
+						*eard = ~*eard;
+					} else {
+						GetEAa;
+						SaveMd(eaa, ~LoadMd(eaa));
+					}
 					break;
 				}
 			case 0x03:											/* NEG Ed */
 				{
 					lflags.type=t_NEGd;
-					if (rm >= 0xc0 ) {
-							GetEArd;lf_var1d=*eard;lf_resd=0-lf_var1d;
-						*eard=lf_resd;
+					if (rm >= 0xc0) {
+						Bit32u *eard = GetEArd(rm);
+						lf_var1d = *eard;
+						lf_resd = 0 - lf_var1d;
+						*eard = lf_resd;
 					} else {
-						GetEAa;lf_var1d=LoadMd(eaa);lf_resd=0-lf_var1d;
-							SaveMd(eaa,lf_resd);
+						GetEAa;
+						lf_var1d = LoadMd(eaa);
+						lf_resd = 0 - lf_var1d;
+						SaveMd(eaa, lf_resd);
 					}
 					break;
 				}
@@ -657,7 +719,7 @@
 		}
 	CASE_D(0xff)												/* GRP 5 Ed */
 		{
-			GetRM;Bitu which=(rm>>3)&7;
+			Bit8u rm = Fetchb();Bitu which=(rm>>3)&7;
 			switch (which) {
 			case 0x00:											/* INC Ed */
 				RMEd(INCD);
@@ -666,8 +728,13 @@
 				RMEd(DECD);
 				break;
 			case 0x02:											/* CALL NEAR Ed */
-				if (rm >= 0xc0 ) {GetEArd;reg_eip=*eard;}
-				else {GetEAa;reg_eip=LoadMd(eaa);}
+				if (rm >= 0xc0) {
+					Bit32u *eard = GetEArd(rm);
+					reg_eip = *eard;
+				} else {
+					GetEAa;
+					reg_eip = LoadMd(eaa);
+				}
 				Push_32(GETIP());
 				continue;
 			case 0x03:											/* CALL FAR Ed */
@@ -687,8 +754,13 @@
 					continue;
 				}
 			case 0x04:											/* JMP NEAR Ed */	
-				if (rm >= 0xc0 ) {GetEArd;reg_eip=*eard;}
-				else {GetEAa;reg_eip=LoadMd(eaa);}
+				if (rm >= 0xc0 ) {
+					Bit32u *eard = GetEArd(rm);
+					reg_eip = *eard;
+				} else {
+					GetEAa;
+					reg_eip = LoadMd(eaa);
+				}
 				continue;
 			case 0x05:											/* JMP FAR Ed */	
 				{
@@ -708,8 +780,13 @@
 				}
 				break;
 			case 0x06:											/* Push Ed */
-				if (rm >= 0xc0 ) {GetEArd;Push_32(*eard);}
-				else {GetEAa;Push_32(LoadMd(eaa));}
+				if (rm >= 0xc0 ) {
+					Bit32u *eard = GetEArd(rm);
+					Push_32(*eard);
+				} else {
+					GetEAa;
+					Push_32(LoadMd(eaa));
+				}
 				break;
 			default:
 				LOG(LOG_CPU,LOG_ERROR)("CPU:66:GRP5:Illegal call %2X",static_cast<uint32_t>(which));

@@ -19,7 +19,7 @@
 	CASE_0F_D(0x00)												/* GRP 6 Exxx */
 		{
 			if ((reg_flags & FLAG_VM) || (!cpu.pmode)) goto illegal_opcode;
-			GetRM;Bitu which=(rm>>3)&7;
+			Bit8u rm = Fetchb();Bitu which=(rm>>3)&7;
 			switch (which) {
 			case 0x00:	/* SLDT */
 			case 0x01:	/* STR */
@@ -27,16 +27,26 @@
 					Bitu saveval;
 					if (!which) saveval=CPU_SLDT();
 					else saveval=CPU_STR();
-					if (rm >= 0xc0) {GetEArw;*earw=(Bit16u)saveval;}
-					else {GetEAa;SaveMw(eaa,saveval);}
+					if (rm >= 0xc0) {
+						Bit16u *earw = GetEArw(rm);
+						*earw = (Bit16u)saveval;
+					} else {
+						GetEAa;
+						SaveMw(eaa, saveval);
+					}
 				}
 				break;
 			case 0x02:case 0x03:case 0x04:case 0x05:
 				{
 					/* Just use 16-bit loads since were only using selectors */
 					Bitu loadval;
-					if (rm >= 0xc0 ) {GetEArw;loadval=*earw;}
-					else {GetEAa;loadval=LoadMw(eaa);}
+					if (rm >= 0xc0) {
+						Bit16u *earw = GetEArw(rm);
+						loadval = *earw;
+					} else {
+						GetEAa;
+						loadval = LoadMw(eaa);
+					}
 					switch (which) {
 					case 0x02:
 						if (cpu.cpl) EXCEPTION(EXCEPTION_GP);
@@ -63,7 +73,7 @@
 		break;
 	CASE_0F_D(0x01)												/* Group 7 Ed */
 		{
-			GetRM;Bitu which=(rm>>3)&7;
+			Bit8u rm = Fetchb();Bitu which=(rm>>3)&7;
 			if (rm < 0xc0)	{ //First ones all use EA
 				GetEAa;Bitu limit;
 				switch (which) {
@@ -96,7 +106,7 @@
 					break;
 				}
 			} else {
-				GetEArd;
+				Bit32u *eard = GetEArd(rm);
 				switch (which) {
 				case 0x02:										/* LGDT */
 					if (cpu.pmode && cpu.cpl) EXCEPTION(EXCEPTION_GP);
@@ -122,11 +132,15 @@
 	CASE_0F_D(0x02)												/* LAR Gd,Ed */
 		{
 			if ((reg_flags & FLAG_VM) || (!cpu.pmode)) goto illegal_opcode;
-			GetRMrd;Bitu ar=*rmrd;
+			Bit8u rm = Fetchb();
+			Bit32u *rmrd = Getrd(rm);
+			Bitu ar = *rmrd;
 			if (rm >= 0xc0) {
-				GetEArw;CPU_LAR(*earw,ar);
+				Bit16u *earw = GetEArw(rm);
+				CPU_LAR(*earw, ar);
 			} else {
-				GetEAa;CPU_LAR(LoadMw(eaa),ar);
+				GetEAa;
+				CPU_LAR(LoadMw(eaa), ar);
 			}
 			*rmrd=(Bit32u)ar;
 		}
@@ -134,12 +148,16 @@
 	CASE_0F_D(0x03)												/* LSL Gd,Ew */
 		{
 			if ((reg_flags & FLAG_VM) || (!cpu.pmode)) goto illegal_opcode;
-			GetRMrd;Bitu limit=*rmrd;
+	        Bit8u rm = Fetchb();
+			Bit32u *rmrd = Getrd(rm);
+			Bitu limit=*rmrd;
 			/* Just load 16-bit values for selectors */
 			if (rm >= 0xc0) {
-				GetEArw;CPU_LSL(*earw,limit);
+				Bit16u *earw = GetEArw(rm);
+				CPU_LSL(*earw, limit);
 			} else {
-				GetEAa;CPU_LSL(LoadMw(eaa),limit);
+				GetEAa;
+				CPU_LSL(LoadMw(eaa), limit);
 			}
 			*rmrd=(Bit32u)limit;
 		}
@@ -184,15 +202,18 @@
 		break;
 	CASE_0F_D(0xa3)												/* BT Ed,Gd */
 		{
-			FillFlags();GetRMrd;
-			Bit32u mask=1 << (*rmrd & 31);
-			if (rm >= 0xc0 ) {
-				GetEArd;
+			FillFlags();
+			Bit8u rm = Fetchb();
+			Bit32u *rmrd = Getrd(rm);	
+			Bit32u mask = 1 << (*rmrd & 31);
+			if (rm >= 0xc0) {
+				Bit32u *eard = GetEArd(rm);
 				SETFLAGBIT(FLAG_CF, (*eard & mask));
 			} else {
-				GetEAa;eaa+=(((Bit32s)*rmrd)>>5)*4;
+				GetEAa;
+				eaa += (((Bit32s)*rmrd) >> 5) * 4;
 				if (!TEST_PREFIX_ADDR) FixEA16;
-				Bit32u old=LoadMd(eaa);
+				Bit32u old = LoadMd(eaa);
 				SETFLAGBIT(FLAG_CF, (old & mask));
 			}
 			break;
@@ -210,16 +231,19 @@
 		break;
 	CASE_0F_D(0xab)												/* BTS Ed,Gd */
 		{
-			FillFlags();GetRMrd;
+			FillFlags();
+			Bit8u rm = Fetchb();
+			Bit32u *rmrd = Getrd(rm);	
 			Bit32u mask=1 << (*rmrd & 31);
-			if (rm >= 0xc0 ) {
-				GetEArd;
+			if (rm >= 0xc0) {
+				Bit32u *eard = GetEArd(rm);
 				SETFLAGBIT(FLAG_CF, (*eard & mask));
-				*eard|=mask;
+				*eard |= mask;
 			} else {
-				GetEAa;eaa+=(((Bit32s)*rmrd)>>5)*4;
+				GetEAa;
+				eaa += (((Bit32s)*rmrd) >> 5) * 4;
 				if (!TEST_PREFIX_ADDR) FixEA16;
-				Bit32u old=LoadMd(eaa);
+				Bit32u old = LoadMd(eaa);
 				SETFLAGBIT(FLAG_CF, (old & mask));
 				SaveMd(eaa,old | mask);
 			}
@@ -241,14 +265,15 @@
 		{	
 			if (CPU_ArchitectureType<CPU_ARCHTYPE_486NEWSLOW) goto illegal_opcode;
 			FillFlags();
-			GetRMrd;
+			Bit8u rm = Fetchb();
+			Bit32u *rmrd = Getrd(rm);
 			if (rm >= 0xc0) {
-				GetEArd;
-				if (*eard==reg_eax) {
-					*eard=*rmrd;
+				Bit32u *eard = GetEArd(rm);
+				if (*eard == reg_eax) {
+					*eard = *rmrd;
 					SETFLAGBIT(FLAG_ZF, true);
 				} else {
-					reg_eax=*eard;
+					reg_eax = *eard;
 					SETFLAGBIT(FLAG_ZF, false);
 				}
 			} else {
@@ -266,8 +291,9 @@
 			break;
 		}
 	CASE_0F_D(0xb2)												/* LSS Ed */
-		{	
-			GetRMrd;
+		{
+			Bit8u rm = Fetchb();
+			Bit32u *rmrd = Getrd(rm);	
 			if (rm >= 0xc0) goto illegal_opcode;
 			GetEAa;
 			if (CPU_SetSegGeneral(ss,LoadMw(eaa+4))) RUNEXCEPTION();
@@ -276,24 +302,28 @@
 		}
 	CASE_0F_D(0xb3)												/* BTR Ed,Gd */
 		{
-			FillFlags();GetRMrd;
-			Bit32u mask=1 << (*rmrd & 31);
-			if (rm >= 0xc0 ) {
-				GetEArd;
+			FillFlags();
+			Bit8u rm = Fetchb();
+			Bit32u *rmrd = Getrd(rm);
+			Bit32u mask = 1 << (*rmrd & 31);
+			if (rm >= 0xc0) {
+				Bit32u *eard = GetEArd(rm);
 				SETFLAGBIT(FLAG_CF, (*eard & mask));
-				*eard&= ~mask;
+				*eard &= ~mask;
 			} else {
-				GetEAa;eaa+=(((Bit32s)*rmrd)>>5)*4;
+				GetEAa;
+				eaa += (((Bit32s)*rmrd) >> 5) * 4;
 				if (!TEST_PREFIX_ADDR) FixEA16;
-				Bit32u old=LoadMd(eaa);
+				Bit32u old = LoadMd(eaa);
 				SETFLAGBIT(FLAG_CF, (old & mask));
-				SaveMd(eaa,old & ~mask);
+				SaveMd(eaa, old & ~mask);
 			}
 			break;
 		}
 	CASE_0F_D(0xb4)												/* LFS Ed */
 		{	
-			GetRMrd;
+			Bit8u rm = Fetchb();
+	        Bit32u *rmrd = Getrd(rm);
 			if (rm >= 0xc0) goto illegal_opcode;
 			GetEAa;
 			if (CPU_SetSegGeneral(fs,LoadMw(eaa+4))) RUNEXCEPTION();
@@ -302,7 +332,8 @@
 		}
 	CASE_0F_D(0xb5)												/* LGS Ed */
 		{	
-			GetRMrd;
+			Bit8u rm = Fetchb();
+	        Bit32u *rmrd = Getrd(rm);	
 			if (rm >= 0xc0) goto illegal_opcode;
 			GetEAa;
 			if (CPU_SetSegGeneral(gs,LoadMw(eaa+4))) RUNEXCEPTION();
@@ -311,23 +342,35 @@
 		}
 	CASE_0F_D(0xb6)												/* MOVZX Gd,Eb */
 		{
-			GetRMrd;															
-			if (rm >= 0xc0 ) {GetEArb;*rmrd=*earb;}
-			else {GetEAa;*rmrd=LoadMb(eaa);}
+	        Bit8u rm = Fetchb();
+	        Bit32u *rmrd = Getrd(rm);															
+			if (rm >= 0xc0) {
+				Bit8u *earb = GetEArb(rm);
+				*rmrd = *earb;
+			} else {
+				GetEAa;
+				*rmrd = LoadMb(eaa);
+			}
 			break;
 		}
 	CASE_0F_D(0xb7)												/* MOVXZ Gd,Ew */
 		{
-			GetRMrd;
-			if (rm >= 0xc0 ) {GetEArw;*rmrd=*earw;}
-			else {GetEAa;*rmrd=LoadMw(eaa);}
+	        Bit8u rm = Fetchb();
+	        Bit32u *rmrd = Getrd(rm);
+			if (rm >= 0xc0) {
+				Bit16u *earw = GetEArw(rm);
+				*rmrd = *earw;
+			} else {
+				GetEAa;
+				*rmrd = LoadMw(eaa);
+			}
 			break;
 		}
 	CASE_0F_D(0xba)												/* GRP8 Ed,Ib */
 		{
-			FillFlags();GetRM;
+			FillFlags();Bit8u rm = Fetchb();
 			if (rm >= 0xc0 ) {
-				GetEArd;
+				Bit32u *eard = GetEArd(rm);
 				Bit32u mask=1 << (Fetchb() & 31);
 				SETFLAGBIT(FLAG_CF, (*eard & mask));
 				switch (rm & 0x38) {
@@ -372,27 +415,36 @@
 		}
 	CASE_0F_D(0xbb)												/* BTC Ed,Gd */
 		{
-			FillFlags();GetRMrd;
-			Bit32u mask=1 << (*rmrd & 31);
+			FillFlags();
+	        Bit8u rm = Fetchb();
+			Bit32u *rmrd = Getrd(rm);
+			Bit32u mask = 1 << (*rmrd & 31);
 			if (rm >= 0xc0 ) {
-				GetEArd;
+				Bit32u * eard = GetEArd(rm);
 				SETFLAGBIT(FLAG_CF, (*eard & mask));
-				*eard^=mask;
+				*eard ^= mask;
 			} else {
-				GetEAa;eaa+=(((Bit32s)*rmrd)>>5)*4;
+				GetEAa;
+				eaa += (((Bit32s)*rmrd) >> 5)*4;
 				if (!TEST_PREFIX_ADDR) FixEA16;
-				Bit32u old=LoadMd(eaa);
+				Bit32u old = LoadMd(eaa);
 				SETFLAGBIT(FLAG_CF, (old & mask));
-				SaveMd(eaa,old ^ mask);
+				SaveMd(eaa, old ^ mask);
 			}
 			break;
 		}
 	CASE_0F_D(0xbc)												/* BSF Gd,Ed */
 		{
-			GetRMrd;
+	        Bit8u rm = Fetchb();
+	        Bit32u *rmrd = Getrd(rm);
 			Bit32u result,value;
-			if (rm >= 0xc0) { GetEArd; value=*eard; } 
-			else			{ GetEAa; value=LoadMd(eaa); }
+			if (rm >= 0xc0) {
+				Bit32u *eard = GetEArd(rm);
+				value = *eard;
+			} else {
+				GetEAa;
+				value = LoadMd(eaa);
+			}
 			if (value==0) {
 				SETFLAGBIT(FLAG_ZF, true);
 			} else {
@@ -406,10 +458,16 @@
 		}
 	CASE_0F_D(0xbd)												/*  BSR Gd,Ed */
 		{
-			GetRMrd;
+	        Bit8u rm = Fetchb();
+	        Bit32u *rmrd = Getrd(rm);
 			Bit32u result,value;
-			if (rm >= 0xc0) { GetEArd; value=*eard; } 
-			else			{ GetEAa; value=LoadMd(eaa); }
+			if (rm >= 0xc0) {
+				Bit32u *eard = GetEArd(rm);
+				value = *eard;
+			} else {
+				GetEAa;
+				value = LoadMd(eaa);
+			}
 			if (value==0) {
 				SETFLAGBIT(FLAG_ZF, true);
 			} else {
@@ -423,24 +481,45 @@
 		}
 	CASE_0F_D(0xbe)												/* MOVSX Gd,Eb */
 		{
-			GetRMrd;															
-			if (rm >= 0xc0 ) {GetEArb;*rmrd=*(Bit8s *)earb;}
-			else {GetEAa;*rmrd=LoadMbs(eaa);}
+	        Bit8u rm = Fetchb();
+	        Bit32u *rmrd = Getrd(rm);														
+			if (rm >= 0xc0) {
+				Bit8u *earb = GetEArb(rm);
+				*rmrd = *(Bit8s *)earb;
+			} else {
+				GetEAa;
+				*rmrd = LoadMbs(eaa);
+			}
 			break;
 		}
 	CASE_0F_D(0xbf)												/* MOVSX Gd,Ew */
 		{
-			GetRMrd;															
-			if (rm >= 0xc0 ) {GetEArw;*rmrd=*(Bit16s *)earw;}
-			else {GetEAa;*rmrd=LoadMws(eaa);}
+	        Bit8u rm = Fetchb();
+	        Bit32u *rmrd = Getrd(rm);														
+			if (rm >= 0xc0) {
+				Bit16u *earw = GetEArw(rm);
+				*rmrd = *(Bit16s *)earw;
+			} else {
+				GetEAa;
+				*rmrd = LoadMws(eaa);
+			}
 			break;
 		}
 	CASE_0F_D(0xc1)												/* XADD Gd,Ed */
 		{
 			if (CPU_ArchitectureType<CPU_ARCHTYPE_486OLDSLOW) goto illegal_opcode;
-			GetRMrd;Bit32u oldrmrd=*rmrd;
-			if (rm >= 0xc0 ) {GetEArd;*rmrd=*eard;*eard+=oldrmrd;}
-			else {GetEAa;*rmrd=LoadMd(eaa);SaveMd(eaa,LoadMd(eaa)+oldrmrd);}
+	        Bit8u rm = Fetchb();
+			Bit32u *rmrd = Getrd(rm);	
+			Bit32u oldrmrd=*rmrd;
+			if (rm >= 0xc0) {
+				Bit32u *eard = GetEArd(rm);
+				*rmrd = *eard;
+				*eard += oldrmrd;
+			} else {
+				GetEAa;
+				*rmrd = LoadMd(eaa);
+				SaveMd(eaa, LoadMd(eaa) + oldrmrd);
+			}
 			break;
 		}
 	CASE_0F_D(0xc8)												/* BSWAP EAX */

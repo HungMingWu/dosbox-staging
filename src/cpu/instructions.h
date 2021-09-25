@@ -781,9 +781,9 @@
 
 #define GRP2B(blah)											\
 {															\
-	GetRM;Bitu which=(rm>>3)&7;								\
+	Bit8u rm = Fetchb();Bitu which=(rm>>3)&7;								\
 	if (rm >= 0xc0) {										\
-		GetEArb;											\
+		Bit8u *earb = GetEArb(rm);							\
 		Bit8u val=blah & 0x1f;								\
 		if (!val) break;									\
 		switch (which)	{									\
@@ -817,9 +817,9 @@
 
 #define GRP2W(blah)											\
 {															\
-	GetRM;Bitu which=(rm>>3)&7;								\
+	Bit8u rm = Fetchb();Bitu which=(rm>>3)&7;								\
 	if (rm >= 0xc0) {										\
-		GetEArw;											\
+		Bit16u *earw = GetEArw(rm);							\
 		Bit8u val=blah & 0x1f;								\
 		if (!val) break;									\
 		switch (which)	{									\
@@ -852,9 +852,9 @@
 
 #define GRP2D(blah)											\
 {															\
-	GetRM;Bitu which=(rm>>3)&7;								\
+	Bit8u rm = Fetchb();Bitu which=(rm>>3)&7;								\
 	if (rm >= 0xc0) {										\
-		GetEArd;											\
+		Bit32u *eard = GetEArd(rm);							\
 		Bit8u val=blah & 0x1f;								\
 		if (!val) break;									\
 		switch (which)	{									\
