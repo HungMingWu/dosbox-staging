@@ -21,106 +21,175 @@
 	PhysPt eaa=EALookupTable[rm]();					
 
 #define GetRMEAa											\
-	GetRM;													\
+	Bit8u rm = Fetchb();													\
 	GetEAa;											
-
 
 #define RMEbGb(inst)														\
 	{																		\
-		GetRMrb;															\
-		if (rm >= 0xc0 ) {GetEArb;inst(*earb,*rmrb,LoadRb,SaveRb);}			\
-		else {GetEAa;inst(eaa,*rmrb,LoadMb,SaveMb);}						\
+		Bit8u rm = Fetchb();																\
+		Bit8u *rmrb = Getrb(rm);											\
+		if (rm >= 0xc0) {													\
+			Bit8u* earb = GetEArb(rm);					                    \
+			inst(*earb,*rmrb,LoadRb,SaveRb);								\
+		} else {															\
+			GetEAa;															\
+			inst(eaa,*rmrb,LoadMb,SaveMb);									\
+		}																	\
 	}
 
 #define RMGbEb(inst)														\
 	{																		\
-		GetRMrb;															\
-		if (rm >= 0xc0 ) {GetEArb;inst(*rmrb,*earb,LoadRb,SaveRb);}			\
-		else {GetEAa;inst(*rmrb,LoadMb(eaa),LoadRb,SaveRb);}				\
+		Bit8u rm = Fetchb();																\
+		Bit8u *rmrb = Getrb(rm);											\
+		if (rm >= 0xc0) {													\
+			Bit8u* earb = GetEArb(rm);										\
+			inst(*rmrb,*earb,LoadRb,SaveRb);								\
+		} else {															\
+			GetEAa;inst(*rmrb,LoadMb(eaa),LoadRb,SaveRb);					\
+		}				\
 	}
 
 #define RMEb(inst)															\
 	{																		\
-		if (rm >= 0xc0 ) {GetEArb;inst(*earb,LoadRb,SaveRb);}				\
-		else {GetEAa;inst(eaa,LoadMb,SaveMb);}								\
+		if (rm >= 0xc0) {													\
+			Bit8u *earb = GetEArb(rm);										\
+			inst(*earb,LoadRb,SaveRb);										\
+		}																	\
+		else {																\
+			GetEAa;															\
+			inst(eaa,LoadMb,SaveMb);										\
+		}																	\
 	}
 
 #define RMEwGw(inst)														\
 	{																		\
-		GetRMrw;															\
-		if (rm >= 0xc0 ) {GetEArw;inst(*earw,*rmrw,LoadRw,SaveRw);}			\
-		else {GetEAa;inst(eaa,*rmrw,LoadMw,SaveMw);}						\
+		Bit8u rm = Fetchb();																\
+		Bit16u *rmrw = Getrw(rm);											\
+		if (rm >= 0xc0) {													\
+			Bit16u *earw = GetEArw(rm);										\
+			inst(*earw,*rmrw,LoadRw,SaveRw);								\
+		} else {															\
+			GetEAa;															\
+			inst(eaa,*rmrw,LoadMw,SaveMw);									\
+		}																	\
 	}
 
 #define RMEwGwOp3(inst,op3)													\
 	{																		\
-		GetRMrw;															\
-		if (rm >= 0xc0 ) {GetEArw;inst(*earw,*rmrw,op3,LoadRw,SaveRw);}		\
-		else {GetEAa;inst(eaa,*rmrw,op3,LoadMw,SaveMw);}					\
+		Bit8u rm = Fetchb();																\
+		Bit16u *rmrw = Getrw(rm);											\
+		if (rm >= 0xc0) {													\
+			Bit16u *earw = GetEArw(rm);										\
+			inst(*earw,*rmrw,op3,LoadRw,SaveRw);							\
+		}else {																\
+			GetEAa;inst(eaa,*rmrw,op3,LoadMw,SaveMw);						\
+		}																	\
 	}
 
 #define RMGwEw(inst)														\
 	{																		\
-		GetRMrw;															\
-		if (rm >= 0xc0 ) {GetEArw;inst(*rmrw,*earw,LoadRw,SaveRw);}			\
-		else {GetEAa;inst(*rmrw,LoadMw(eaa),LoadRw,SaveRw);}				\
+		Bit8u rm = Fetchb();																\
+		Bit16u *rmrw = Getrw(rm);											\
+		if (rm >= 0xc0) {													\
+			Bit16u *earw = GetEArw(rm);										\
+			inst(*rmrw,*earw,LoadRw,SaveRw);								\
+		} else {															\
+			GetEAa;inst(*rmrw,LoadMw(eaa),LoadRw,SaveRw);					\
+		}																	\
 	}																
 
 #define RMGwEwOp3(inst,op3)													\
 	{																		\
-		GetRMrw;															\
-		if (rm >= 0xc0 ) {GetEArw;inst(*rmrw,*earw,op3,LoadRw,SaveRw);}		\
-		else {GetEAa;inst(*rmrw,LoadMw(eaa),op3,LoadRw,SaveRw);}			\
+		Bit8u rm = Fetchb();																\
+		Bit16u *rmrw = Getrw(rm);											\
+		if (rm >= 0xc0) {													\
+			Bit16u *earw = GetEArw(rm);										\
+			inst(*rmrw,*earw,op3,LoadRw,SaveRw);							\
+		} else {															\
+			GetEAa;															\
+			inst(*rmrw,LoadMw(eaa),op3,LoadRw,SaveRw);						\
+		}																	\
 	}																
 
 #define RMEw(inst)															\
 	{																		\
-		if (rm >= 0xc0 ) {GetEArw;inst(*earw,LoadRw,SaveRw);}				\
+		if (rm >= 0xc0 ) {GetEArw(rm);inst(*earw,LoadRw,SaveRw);}				\
 		else {GetEAa;inst(eaa,LoadMw,SaveMw);}								\
 	}
 
 #define RMEdGd(inst)														\
 	{																		\
-		GetRMrd;															\
-		if (rm >= 0xc0 ) {GetEArd;inst(*eard,*rmrd,LoadRd,SaveRd);}			\
-		else {GetEAa;inst(eaa,*rmrd,LoadMd,SaveMd);}						\
+		Bit8u rm = Fetchb();																\
+		Bit32u *rmrd = Getrd(rm);											\
+		if (rm >= 0xc0) {													\
+			Bit32u *eard = GetEArd(rm);										\
+			inst(*eard,*rmrd,LoadRd,SaveRd);								\
+		} else {															\
+			GetEAa;															\
+			inst(eaa,*rmrd,LoadMd,SaveMd);									\
+		}																	\
 	}
 
 #define RMEdGdOp3(inst,op3)													\
 	{																		\
-		GetRMrd;															\
-		if (rm >= 0xc0 ) {GetEArd;inst(*eard,*rmrd,op3,LoadRd,SaveRd);}		\
-		else {GetEAa;inst(eaa,*rmrd,op3,LoadMd,SaveMd);}					\
+		Bit8u rm = Fetchb();																\
+		Bit32u *rmrd = Getrd(rm);											\
+		if (rm >= 0xc0) {													\
+			Bit32u *eard = GetEArd(rm);										\
+			inst(*eard,*rmrd,op3,LoadRd,SaveRd);							\
+		} else {															\
+			GetEAa;															\
+			inst(eaa,*rmrd,op3,LoadMd,SaveMd);								\
+		}																	\
 	}
 
 
 #define RMGdEd(inst)														\
 	{																		\
-		GetRMrd;															\
-		if (rm >= 0xc0 ) {GetEArd;inst(*rmrd,*eard,LoadRd,SaveRd);}			\
-		else {GetEAa;inst(*rmrd,LoadMd(eaa),LoadRd,SaveRd);}				\
+		Bit8u rm = Fetchb();																\
+		Bit32u *rmrd = Getrd(rm);											\
+		if (rm >= 0xc0) {													\
+			Bit32u *eard = GetEArd(rm);										\
+			inst(*rmrd,*eard,LoadRd,SaveRd);								\
+		} else {															\
+			GetEAa;															\
+			inst(*rmrd,LoadMd(eaa),LoadRd,SaveRd);							\
+		}																	\
 	}																
 
 #define RMGdEdOp3(inst,op3)													\
 	{																		\
-		GetRMrd;															\
-		if (rm >= 0xc0 ) {GetEArd;inst(*rmrd,*eard,op3,LoadRd,SaveRd);}		\
-		else {GetEAa;inst(*rmrd,LoadMd(eaa),op3,LoadRd,SaveRd);}			\
+		Bit8u rm = Fetchb();																\
+		Bit32u *rmrd = Getrd(rm);											\
+		if (rm >= 0xc0) {													\
+			Bit32u *eard = GetEArd(rm);										\
+			inst(*rmrd,*eard,op3,LoadRd,SaveRd);							\
+		} else {															\
+			GetEAa;															\
+			inst(*rmrd,LoadMd(eaa),op3,LoadRd,SaveRd);						\
+		}																	\
 	}																
-
-
-
 
 #define RMEw(inst)															\
 	{																		\
-		if (rm >= 0xc0 ) {GetEArw;inst(*earw,LoadRw,SaveRw);}				\
-		else {GetEAa;inst(eaa,LoadMw,SaveMw);}								\
+		if (rm >= 0xc0) {													\
+			Bit16u *earw = GetEArw(rm);										\
+			inst(*earw,LoadRw,SaveRw);										\
+		} else {															\
+			GetEAa;															\
+			inst(eaa,LoadMw,SaveMw);										\
+		}																	\
 	}
 
 #define RMEd(inst)															\
 	{																		\
-		if (rm >= 0xc0 ) {GetEArd;inst(*eard,LoadRd,SaveRd);}				\
-		else {GetEAa;inst(eaa,LoadMd,SaveMd);}								\
+		if (rm >= 0xc0) {													\
+			Bit32u *eard = GetEArd(rm);										\
+			inst(*eard,LoadRd,SaveRd);										\
+		} else {															\
+			GetEAa;															\
+			inst(eaa,LoadMd,SaveMd);										\
+		}																	\
 	}
 
 #define ALIb(inst)															\

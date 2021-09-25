@@ -23,42 +23,11 @@ extern Bit8u  * lookupRMEAregb[256];
 extern Bit16u * lookupRMEAregw[256];
 extern Bit32u * lookupRMEAregd[256];
 
-#define GetRM												\
-	Bit8u rm=Fetchb();
 
-#define Getrb												\
-	Bit8u * rmrb;											\
-	rmrb=lookupRMregb[rm];			
-	
-#define Getrw												\
-	Bit16u * rmrw;											\
-	rmrw=lookupRMregw[rm];			
+inline Bit8u *Getrb(Bit8u rm) { return lookupRMregb[rm]; }
+inline Bit16u *Getrw(Bit8u rm) { return lookupRMregw[rm]; }
+inline Bit32u *Getrd(Bit8u rm) { return lookupRMregd[rm]; }
 
-#define Getrd												\
-	Bit32u * rmrd;											\
-	rmrd=lookupRMregd[rm];			
-
-
-#define GetRMrb												\
-	GetRM;													\
-	Getrb;													
-
-#define GetRMrw												\
-	GetRM;													\
-	Getrw;													
-
-#define GetRMrd												\
-	GetRM;													\
-	Getrd;													
-
-
-#define GetEArb												\
-	Bit8u * earb=lookupRMEAregb[rm];
-
-#define GetEArw												\
-	Bit16u * earw=lookupRMEAregw[rm];
-
-#define GetEArd												\
-	Bit32u * eard=lookupRMEAregd[rm];
-
-
+inline Bit8u *GetEArb(Bit8u rm) { return lookupRMEAregb[rm]; }
+inline Bit16u *GetEArw(Bit8u rm) { return lookupRMEAregw[rm]; }
+inline Bit32u *GetEArd(Bit8u rm) { return lookupRMEAregd[rm]; }

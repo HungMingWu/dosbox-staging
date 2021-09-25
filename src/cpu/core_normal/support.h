@@ -84,9 +84,15 @@ static INLINE Bit32s Fetchds() {
 
 #define SETcc(cc)											\
 	{														\
-		GetRM;												\
-		if (rm >= 0xc0 ) {GetEArb;*earb=(cc) ? 1 : 0;}		\
-		else {GetEAa;SaveMb(eaa,(cc) ? 1 : 0);}				\
+		Bit8u rm = Fetchb();												\
+		if (rm >= 0xc0) {									\
+			Bit8u *earb = GetEArb(rm);						\
+			*earb = (cc) ? 1 : 0;							\
+		}													\
+		else {												\
+			GetEAa;											\
+			SaveMb(eaa, (cc) ? 1 : 0);						\
+		}													\
 	}
 
 #include "helpers.h"
