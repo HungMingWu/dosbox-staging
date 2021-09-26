@@ -31,7 +31,7 @@
 						Bit16u *earw = GetEArw(rm);
 						*earw = saveval;
 					} else {
-						GetEAa;
+						PhysPt eaa = core.ea_table[rm](); 
 						SaveMw(eaa, saveval);
 					}
 				}
@@ -43,7 +43,7 @@
 						Bit16u *earw = GetEArw(rm);
 						loadval = *earw;
 					} else {
-						GetEAa;
+						PhysPt eaa = core.ea_table[rm](); 
 						loadval = LoadMw(eaa);
 					}
 					switch (which) {
@@ -73,7 +73,8 @@
 		{
 			Bit8u rm = Fetchb();Bitu which=(rm>>3)&7;
 			if (rm < 0xc0)	{ //First ones all use EA
-				GetEAa;Bitu limit;
+				PhysPt eaa = core.ea_table[rm](); 
+				Bitu limit;
 				switch (which) {
 				case 0x00:										/* SGDT */
 					SaveMw(eaa,CPU_SGDT_limit());
@@ -134,7 +135,7 @@
 				Bit16u *earw = GetEArw(rm);
 				CPU_LAR(*earw, ar);
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				CPU_LAR(LoadMw(eaa), ar);
 			}
 			*rmrw=(Bit16u)ar;
@@ -150,7 +151,7 @@
 				Bit16u *earw = GetEArw(rm);
 				CPU_LSL(*earw, limit);
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				CPU_LSL(LoadMw(eaa), limit);
 			}
 			*rmrw=(Bit16u)limit;
@@ -323,7 +324,7 @@
 		SETcc(TFLG_NLE);break;
 
 	CASE_0F_W(0xa0)												/* PUSH FS */		
-		Push_16(SegValue(fs));break;
+		CPU_Push16(SegValue(fs));break;
 	CASE_0F_W(0xa1)												/* POP FS */	
 		if (CPU_PopSeg(fs,false)) RUNEXCEPTION();
 		break;
@@ -340,7 +341,7 @@
 				Bit16u *earw = GetEArw(rm);
 				SETFLAGBIT(FLAG_CF, (*earw & mask));
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				eaa += (((Bit16s)*rmrw) >> 4) * 2;
 				if (!TEST_PREFIX_ADDR) FixEA16;
 				Bit16u old = LoadMw(eaa);
@@ -355,7 +356,7 @@
 		RMEwGwOp3(DSHLW,reg_cl);
 		break;
 	CASE_0F_W(0xa8)												/* PUSH GS */		
-		Push_16(SegValue(gs));break;
+		CPU_Push16(SegValue(gs));break;
 	CASE_0F_W(0xa9)												/* POP GS */		
 		if (CPU_PopSeg(gs,false)) RUNEXCEPTION();
 		break;
@@ -370,7 +371,7 @@
 				SETFLAGBIT(FLAG_CF, (*earw & mask));
 				*earw |= mask;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				eaa += (((Bit16s)*rmrw) >> 4) * 2;
 				if (!TEST_PREFIX_ADDR) FixEA16;
 				Bit16u old=LoadMw(eaa);
@@ -404,7 +405,7 @@
 					SETFLAGBIT(FLAG_ZF,false);
 				}
 			} else {
-   				GetEAa;
+   				PhysPt eaa = core.ea_table[rm](); 
 				Bit8u val = LoadMb(eaa);
 				if (reg_al == val) { 
 					SaveMb(eaa,*rmrb);
@@ -433,7 +434,7 @@
 					SETFLAGBIT(FLAG_ZF, false);
 				}
 			} else {
-   				GetEAa;
+   				PhysPt eaa = core.ea_table[rm](); 
 				Bit16u val = LoadMw(eaa);
 				if(reg_ax == val) { 
 					SaveMw(eaa,*rmrw);
@@ -452,7 +453,7 @@
 			Bit8u rm = Fetchb();
 	        Bit16u *rmrw = Getrw(rm);
 			if (rm >= 0xc0) goto illegal_opcode;
-			GetEAa;
+			PhysPt eaa = core.ea_table[rm](); 
 			if (CPU_SetSegGeneral(ss,LoadMw(eaa+2))) RUNEXCEPTION();
 			*rmrw=LoadMw(eaa);
 			break;
@@ -468,7 +469,7 @@
 				SETFLAGBIT(FLAG_CF, (*earw & mask));
 				*earw &= ~mask;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				eaa += (((Bit16s)*rmrw) >> 4)*2;
 				if (!TEST_PREFIX_ADDR) FixEA16;
 				Bit16u old = LoadMw(eaa);
@@ -482,7 +483,7 @@
 			Bit8u rm = Fetchb();
 	        Bit16u *rmrw = Getrw(rm);
 			if (rm >= 0xc0) goto illegal_opcode;
-			GetEAa;
+			PhysPt eaa = core.ea_table[rm](); 
 			if (CPU_SetSegGeneral(fs,LoadMw(eaa+2))) RUNEXCEPTION();
 			*rmrw=LoadMw(eaa);
 			break;
@@ -492,7 +493,7 @@
 			Bit8u rm = Fetchb();
 	        Bit16u *rmrw = Getrw(rm);
 			if (rm >= 0xc0) goto illegal_opcode;
-			GetEAa;
+			PhysPt eaa = core.ea_table[rm](); 
 			if (CPU_SetSegGeneral(gs,LoadMw(eaa+2))) RUNEXCEPTION();
 			*rmrw=LoadMw(eaa);
 			break;
@@ -505,7 +506,7 @@
 				Bit8u *earb = GetEArb(rm);
 				*rmrw = *earb;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				*rmrw = LoadMb(eaa);
 			}
 			break;
@@ -519,7 +520,7 @@
 				Bit16u *earw = GetEArw(rm);
 				*rmrw = *earw;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				*rmrw = LoadMw(eaa);
 			}
 			break;
@@ -547,8 +548,9 @@
 					E_Exit("CPU:0F:BA:Illegal subfunction %X",rm & 0x38);
 				}
 			} else {
-				GetEAa;Bit16u old=LoadMw(eaa);
-				Bit16u mask=1 << (Fetchb() & 15);
+				PhysPt eaa = core.ea_table[rm](); 
+				Bit16u old = LoadMw(eaa);
+				Bit16u mask = 1 << (Fetchb() & 15);
 				SETFLAGBIT(FLAG_CF, (old & mask));
 				switch (rm & 0x38) {
 				case 0x20:										/* BT */
@@ -579,7 +581,8 @@
 				SETFLAGBIT(FLAG_CF, (*earw & mask));
 				*earw ^= mask;
 			} else {
-				GetEAa;eaa += (((Bit16s)*rmrw) >> 4) * 2;
+				PhysPt eaa = core.ea_table[rm](); 
+				eaa += (((Bit16s)*rmrw) >> 4) * 2;
 				if (!TEST_PREFIX_ADDR) FixEA16;
 				Bit16u old = LoadMw(eaa);
 				SETFLAGBIT(FLAG_CF, (old & mask));
@@ -596,7 +599,7 @@
 				Bit16u *earw = GetEArw(rm);
 				value = *earw;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				value = LoadMw(eaa);
 			}
 			if (value==0) {
@@ -619,7 +622,7 @@
 				Bit16u *earw = GetEArw(rm);
 				value = *earw;
 			} else { 
-				GetEAa; 
+				PhysPt eaa = core.ea_table[rm]();  
 				value = LoadMw(eaa);
 			}
 			if (value==0) {
@@ -641,7 +644,7 @@
 				Bit8u *earb = GetEArb(rm);
 				*rmrw = *(Bit8s *)earb;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				*rmrw = LoadMbs(eaa);
 			}
 			break;
@@ -657,7 +660,7 @@
 				*rmrb = *earb;
 				*earb += oldrmrb;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				*rmrb = LoadMb(eaa);
 				SaveMb(eaa, LoadMb(eaa) + oldrmrb);
 			}
@@ -674,7 +677,7 @@
 				*rmrw = *earw;
 				*earw += oldrmrw;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				*rmrw = LoadMw(eaa);
 				SaveMw(eaa, LoadMw(eaa) + oldrmrw);
 			}

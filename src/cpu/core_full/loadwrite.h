@@ -49,9 +49,3 @@ static inline Bit32u the_Fetchd(EAPoint & loc) {
 #define Fetchbs() (Bit8s)the_Fetchb(inst.cseip)
 #define Fetchws() (Bit16s)the_Fetchw(inst.cseip)
 #define Fetchds() (Bit32s)the_Fetchd(inst.cseip)
-
-#define Push_16 CPU_Push16
-#define Push_32 CPU_Push32
-#define Pop_16 CPU_Pop16
-#define Pop_32 CPU_Pop32
-

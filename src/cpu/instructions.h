@@ -797,7 +797,7 @@
 		case 0x07:SARB(*earb,val,LoadRb,SaveRb);break;		\
 		}													\
 	} else {												\
-		GetEAa;												\
+		PhysPt eaa = core.ea_table[rm](); 											\
 		Bit8u val=blah & 0x1f;								\
 		if (!val) break;									\
 		switch (which) {									\
@@ -833,7 +833,7 @@
 		case 0x07:SARW(*earw,val,LoadRw,SaveRw);break;		\
 		}													\
 	} else {												\
-		GetEAa;												\
+		PhysPt eaa = core.ea_table[rm](); 											\
 		Bit8u val=blah & 0x1f;								\
 		if (!val) break;									\
 		switch (which) {									\
@@ -868,7 +868,7 @@
 		case 0x07:SARD(*eard,val,LoadRd,SaveRd);break;		\
 		}													\
 	} else {												\
-		GetEAa;												\
+		PhysPt eaa = core.ea_table[rm](); 											\
 		Bit8u val=blah & 0x1f;								\
 		if (!val) break;									\
 		switch (which) {									\

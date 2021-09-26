@@ -90,7 +90,7 @@ static inline Bit32s Fetchds() {
 			*earb = (cc) ? 1 : 0;							\
 		}													\
 		else {												\
-			GetEAa;											\
+			PhysPt eaa = core.ea_table[rm](); 										\
 			SaveMb(eaa, (cc) ? 1 : 0);						\
 		}													\
 	}

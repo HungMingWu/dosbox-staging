@@ -174,12 +174,7 @@ static GetEAHandler EATable[512]={
 	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0
 };
 
-#define GetEADirect							\
-	PhysPt eaa;								\
-	if (TEST_PREFIX_ADDR) {					\
-		eaa=BaseDS+Fetchd();				\
-	} else {								\
-		eaa=BaseDS+Fetchw();				\
-	}										\
-
-
+inline PhysPt GetEADirect(bool prefix, PhysPt ds)
+{
+	return (prefix) ? ds + Fetchd() : ds + Fetchw();
+}

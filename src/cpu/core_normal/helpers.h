@@ -16,14 +16,6 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-
-#define GetEAa												\
-	PhysPt eaa=EALookupTable[rm]();					
-
-#define GetRMEAa											\
-	Bit8u rm = Fetchb();													\
-	GetEAa;											
-
 #define RMEbGb(inst)														\
 	{																		\
 		Bit8u rm = Fetchb();																\
@@ -32,7 +24,7 @@
 			Bit8u* earb = GetEArb(rm);					                    \
 			inst(*earb,*rmrb,LoadRb,SaveRb);								\
 		} else {															\
-			GetEAa;															\
+			PhysPt eaa = core.ea_table[rm](); 														\
 			inst(eaa,*rmrb,LoadMb,SaveMb);									\
 		}																	\
 	}
@@ -45,7 +37,8 @@
 			Bit8u* earb = GetEArb(rm);										\
 			inst(*rmrb,*earb,LoadRb,SaveRb);								\
 		} else {															\
-			GetEAa;inst(*rmrb,LoadMb(eaa),LoadRb,SaveRb);					\
+			PhysPt eaa = core.ea_table[rm](); 														\
+			inst(*rmrb,LoadMb(eaa),LoadRb,SaveRb);							\
 		}				\
 	}
 
@@ -56,7 +49,7 @@
 			inst(*earb,LoadRb,SaveRb);										\
 		}																	\
 		else {																\
-			GetEAa;															\
+			PhysPt eaa = core.ea_table[rm](); 														\
 			inst(eaa,LoadMb,SaveMb);										\
 		}																	\
 	}
@@ -69,7 +62,7 @@
 			Bit16u *earw = GetEArw(rm);										\
 			inst(*earw,*rmrw,LoadRw,SaveRw);								\
 		} else {															\
-			GetEAa;															\
+			PhysPt eaa = core.ea_table[rm](); 														\
 			inst(eaa,*rmrw,LoadMw,SaveMw);									\
 		}																	\
 	}
@@ -82,7 +75,8 @@
 			Bit16u *earw = GetEArw(rm);										\
 			inst(*earw,*rmrw,op3,LoadRw,SaveRw);							\
 		}else {																\
-			GetEAa;inst(eaa,*rmrw,op3,LoadMw,SaveMw);						\
+			PhysPt eaa = core.ea_table[rm](); 														\
+			inst(eaa,*rmrw,op3,LoadMw,SaveMw);								\
 		}																	\
 	}
 
@@ -94,7 +88,8 @@
 			Bit16u *earw = GetEArw(rm);										\
 			inst(*rmrw,*earw,LoadRw,SaveRw);								\
 		} else {															\
-			GetEAa;inst(*rmrw,LoadMw(eaa),LoadRw,SaveRw);					\
+			PhysPt eaa = core.ea_table[rm](); 														\
+			inst(*rmrw,LoadMw(eaa),LoadRw,SaveRw);							\
 		}																	\
 	}																
 
@@ -106,15 +101,20 @@
 			Bit16u *earw = GetEArw(rm);										\
 			inst(*rmrw,*earw,op3,LoadRw,SaveRw);							\
 		} else {															\
-			GetEAa;															\
+			PhysPt eaa = core.ea_table[rm](); 														\
 			inst(*rmrw,LoadMw(eaa),op3,LoadRw,SaveRw);						\
 		}																	\
 	}																
 
 #define RMEw(inst)															\
 	{																		\
-		if (rm >= 0xc0 ) {GetEArw(rm);inst(*earw,LoadRw,SaveRw);}				\
-		else {GetEAa;inst(eaa,LoadMw,SaveMw);}								\
+		if (rm >= 0xc0) {													\
+			Bit16u *earw = GetEArw(rm);										\
+			inst(*earw,LoadRw,SaveRw);										\
+		} else {															\
+			PhysPt eaa = core.ea_table[rm](); 														\
+			inst(eaa,LoadMw,SaveMw);										\
+		}																	\
 	}
 
 #define RMEdGd(inst)														\
@@ -125,7 +125,7 @@
 			Bit32u *eard = GetEArd(rm);										\
 			inst(*eard,*rmrd,LoadRd,SaveRd);								\
 		} else {															\
-			GetEAa;															\
+			PhysPt eaa = core.ea_table[rm](); 														\
 			inst(eaa,*rmrd,LoadMd,SaveMd);									\
 		}																	\
 	}
@@ -138,7 +138,7 @@
 			Bit32u *eard = GetEArd(rm);										\
 			inst(*eard,*rmrd,op3,LoadRd,SaveRd);							\
 		} else {															\
-			GetEAa;															\
+			PhysPt eaa = core.ea_table[rm](); 														\
 			inst(eaa,*rmrd,op3,LoadMd,SaveMd);								\
 		}																	\
 	}
@@ -152,7 +152,7 @@
 			Bit32u *eard = GetEArd(rm);										\
 			inst(*rmrd,*eard,LoadRd,SaveRd);								\
 		} else {															\
-			GetEAa;															\
+			PhysPt eaa = core.ea_table[rm](); 														\
 			inst(*rmrd,LoadMd(eaa),LoadRd,SaveRd);							\
 		}																	\
 	}																
@@ -165,7 +165,7 @@
 			Bit32u *eard = GetEArd(rm);										\
 			inst(*rmrd,*eard,op3,LoadRd,SaveRd);							\
 		} else {															\
-			GetEAa;															\
+			PhysPt eaa = core.ea_table[rm](); 														\
 			inst(*rmrd,LoadMd(eaa),op3,LoadRd,SaveRd);						\
 		}																	\
 	}																
@@ -176,7 +176,7 @@
 			Bit16u *earw = GetEArw(rm);										\
 			inst(*earw,LoadRw,SaveRw);										\
 		} else {															\
-			GetEAa;															\
+			PhysPt eaa = core.ea_table[rm](); 														\
 			inst(eaa,LoadMw,SaveMw);										\
 		}																	\
 	}
@@ -187,7 +187,7 @@
 			Bit32u *eard = GetEArd(rm);										\
 			inst(*eard,LoadRd,SaveRd);										\
 		} else {															\
-			GetEAa;															\
+			PhysPt eaa = core.ea_table[rm](); 														\
 			inst(eaa,LoadMd,SaveMd);										\
 		}																	\
 	}
@@ -203,10 +203,11 @@
 
 #define FPU_ESC(code) {														\
 	Bit8u rm=Fetchb();														\
-	if (rm >= 0xc0) {															\
+	if (rm >= 0xc0) {														\
 		FPU_ESC ## code ## _Normal(rm);										\
 	} else {																\
-		GetEAa;FPU_ESC ## code ## _EA(rm,eaa);								\
+		PhysPt eaa = core.ea_table[rm](); 															\
+		FPU_ESC ## code ## _EA(rm,eaa);										\
 	}																		\
 }
 

@@ -29,7 +29,7 @@
 	CASE_W(0x05)												/* ADD AX,Iw */
 		AXIw(ADDW);break;
 	CASE_W(0x06)												/* PUSH ES */		
-		Push_16(SegValue(es));break;
+		CPU_Push16(SegValue(es));break;
 	CASE_W(0x07)												/* POP ES */
 		if (CPU_PopSeg(es,false)) RUNEXCEPTION();
 		break;
@@ -46,7 +46,7 @@
 	CASE_W(0x0d)												/* OR AX,Iw */
 		AXIw(ORW);break;
 	CASE_W(0x0e)												/* PUSH CS */		
-		Push_16(SegValue(cs));break;
+		CPU_Push16(SegValue(cs));break;
 	CASE_B(0x0f)												/* 2 byte opcodes*/		
 		core.opcode_index|=OPCODE_0F;
 		goto restart_opcode;
@@ -64,7 +64,7 @@
 	CASE_W(0x15)												/* ADC AX,Iw */
 		AXIw(ADCW);break;
 	CASE_W(0x16)												/* PUSH SS */		
-		Push_16(SegValue(ss));break;
+		CPU_Push16(SegValue(ss));break;
 	CASE_W(0x17)												/* POP SS */		
 		if (CPU_PopSeg(ss,false)) RUNEXCEPTION();
 		CPU_Cycles++; //Always do another instruction
@@ -82,7 +82,7 @@
 	CASE_W(0x1d)												/* SBB AX,Iw */
 		AXIw(SBBW);break;
 	CASE_W(0x1e)												/* PUSH DS */		
-		Push_16(SegValue(ds));break;
+		CPU_Push16(SegValue(ds));break;
 	CASE_W(0x1f)												/* POP DS */
 		if (CPU_PopSeg(ds,false)) RUNEXCEPTION();
 		break;
@@ -183,54 +183,54 @@
 	CASE_W(0x4f)												/* DEC DI */
 		DECW(reg_di,LoadRw,SaveRw);break;
 	CASE_W(0x50)												/* PUSH AX */
-		Push_16(reg_ax);break;
+		CPU_Push16(reg_ax);break;
 	CASE_W(0x51)												/* PUSH CX */
-		Push_16(reg_cx);break;
+		CPU_Push16(reg_cx);break;
 	CASE_W(0x52)												/* PUSH DX */
-		Push_16(reg_dx);break;
+		CPU_Push16(reg_dx);break;
 	CASE_W(0x53)												/* PUSH BX */
-		Push_16(reg_bx);break;
+		CPU_Push16(reg_bx);break;
 	CASE_W(0x54)												/* PUSH SP */
-		Push_16(reg_sp);break;
+		CPU_Push16(reg_sp);break;
 	CASE_W(0x55)												/* PUSH BP */
-		Push_16(reg_bp);break;
+		CPU_Push16(reg_bp);break;
 	CASE_W(0x56)												/* PUSH SI */
-		Push_16(reg_si);break;
+		CPU_Push16(reg_si);break;
 	CASE_W(0x57)												/* PUSH DI */
-		Push_16(reg_di);break;
+		CPU_Push16(reg_di);break;
 	CASE_W(0x58)												/* POP AX */
-		reg_ax=Pop_16();break;
+		reg_ax=CPU_Pop16();break;
 	CASE_W(0x59)												/* POP CX */
-		reg_cx=Pop_16();break;
+		reg_cx=CPU_Pop16();break;
 	CASE_W(0x5a)												/* POP DX */
-		reg_dx=Pop_16();break;
+		reg_dx=CPU_Pop16();break;
 	CASE_W(0x5b)												/* POP BX */
-		reg_bx=Pop_16();break;
+		reg_bx=CPU_Pop16();break;
 	CASE_W(0x5c)												/* POP SP */
-		reg_sp=Pop_16();break;
+		reg_sp=CPU_Pop16();break;
 	CASE_W(0x5d)												/* POP BP */
-		reg_bp=Pop_16();break;
+		reg_bp=CPU_Pop16();break;
 	CASE_W(0x5e)												/* POP SI */
-		reg_si=Pop_16();break;
+		reg_si=CPU_Pop16();break;
 	CASE_W(0x5f)												/* POP DI */
-		reg_di=Pop_16();break;
+		reg_di=CPU_Pop16();break;
 	CASE_W(0x60)												/* PUSHA */
 		{
 			Bit16u old_sp=reg_sp;
-			Push_16(reg_ax);Push_16(reg_cx);Push_16(reg_dx);Push_16(reg_bx);
-			Push_16(old_sp);Push_16(reg_bp);Push_16(reg_si);Push_16(reg_di);
+			CPU_Push16(reg_ax);CPU_Push16(reg_cx);CPU_Push16(reg_dx);CPU_Push16(reg_bx);
+			CPU_Push16(old_sp);CPU_Push16(reg_bp);CPU_Push16(reg_si);CPU_Push16(reg_di);
 		}
 		break;
 	CASE_W(0x61)												/* POPA */
-		reg_di=Pop_16();reg_si=Pop_16();reg_bp=Pop_16();Pop_16();//Don't save SP
-		reg_bx=Pop_16();reg_dx=Pop_16();reg_cx=Pop_16();reg_ax=Pop_16();
+		reg_di=CPU_Pop16();reg_si=CPU_Pop16();reg_bp=CPU_Pop16();CPU_Pop16();//Don't save SP
+		reg_bx=CPU_Pop16();reg_dx=CPU_Pop16();reg_cx=CPU_Pop16();reg_ax=CPU_Pop16();
 		break;
 	CASE_W(0x62)												/* BOUND */
 		{
 			Bit16s bound_min, bound_max;
 			Bit8u rm = Fetchb();
 			Bit16u *rmrw = Getrw(rm);
-			GetEAa;
+			PhysPt eaa = core.ea_table[rm](); 
 			bound_min=LoadMw(eaa);
 			bound_max=LoadMw(eaa+2);
 			if ( (((Bit16s)*rmrw) < bound_min) || (((Bit16s)*rmrw) > bound_max) ) {
@@ -249,7 +249,7 @@
 				CPU_ARPL(new_sel,*rmrw);
 				*earw = (Bit16u)new_sel;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				Bitu new_sel = LoadMw(eaa);
 				CPU_ARPL(new_sel, *rmrw);
 				SaveMw(eaa, (Bit16u)new_sel);
@@ -266,12 +266,12 @@
 	CASE_B(0x67)												/* Address Size Prefix */
 		DO_PREFIX_ADDR();
 	CASE_W(0x68)												/* PUSH Iw */
-		Push_16(Fetchw());break;
+		CPU_Push16(Fetchw());break;
 	CASE_W(0x69)												/* IMUL Gw,Ew,Iw */
 		RMGwEwOp3(DIMULW,Fetchws());
 		break;
 	CASE_W(0x6a)												/* PUSH Ib */
-		Push_16(Fetchbs());
+		CPU_Push16(Fetchbs());
 		break;
 	CASE_W(0x6b)												/* IMUL Gw,Ew,Ib */
 		RMGwEwOp3(DIMULW,Fetchbs());
@@ -338,7 +338,8 @@
 				case 0x07:CMPB(*earb,ib,LoadRb,SaveRb);break;
 				}
 			} else {
-				GetEAa;Bit8u ib=Fetchb();
+				PhysPt eaa = core.ea_table[rm](); 
+				Bit8u ib=Fetchb();
 				switch (which) {
 				case 0x00:ADDB(eaa,ib,LoadMb,SaveMb);break;
 				case 0x01: ORB(eaa,ib,LoadMb,SaveMb);break;
@@ -369,7 +370,8 @@
 				case 0x07:CMPW(*earw,iw,LoadRw,SaveRw);break;
 				}
 			} else {
-				GetEAa;Bit16u iw=Fetchw();
+				PhysPt eaa = core.ea_table[rm](); 
+				Bit16u iw = Fetchw();
 				switch (which) {
 				case 0x00:ADDW(eaa,iw,LoadMw,SaveMw);break;
 				case 0x01: ORW(eaa,iw,LoadMw,SaveMw);break;
@@ -400,7 +402,8 @@
 				case 0x07:CMPW(*earw,iw,LoadRw,SaveRw);break;
 				}
 			} else {
-				GetEAa;Bit16u iw=(Bit16s)Fetchbs();
+				PhysPt eaa = core.ea_table[rm](); 
+				Bit16u iw = (Bit16s)Fetchbs();
 				switch (which) {
 				case 0x00:ADDW(eaa,iw,LoadMw,SaveMw);break;
 				case 0x01: ORW(eaa,iw,LoadMw,SaveMw);break;
@@ -430,7 +433,7 @@
 				*rmrb=*earb;
 				*earb=oldrmrb;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				*rmrb=LoadMb(eaa);
 				SaveMb(eaa,oldrmrb);
 			}
@@ -446,7 +449,7 @@
 				*rmrw = *earw;
 				*earw = oldrmrw;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				*rmrw = LoadMw(eaa);
 				SaveMw(eaa, oldrmrw);
 			}
@@ -471,7 +474,8 @@
 						}
 					}
 				}
-				GetEAa;SaveMb(eaa,*rmrb);
+				PhysPt eaa = core.ea_table[rm](); 
+				SaveMb(eaa, *rmrb);
 			}
 			break;
 		}
@@ -483,7 +487,7 @@
 				Bit16u *earw = GetEArw(rm);
 				*earw = *rmrw;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				SaveMw(eaa, *rmrw);
 			}
 			break;
@@ -496,7 +500,7 @@
 				Bit8u *earb = GetEArb(rm);
 				*rmrb = *earb;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				*rmrb = LoadMb(eaa);
 			}
 			break;
@@ -509,7 +513,7 @@
 				Bit16u *earw = GetEArw(rm);
 				*rmrw = *earw;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				*rmrw = LoadMw(eaa);
 			}
 			break;
@@ -538,7 +542,7 @@
 				Bit16u *earw = GetEArw(rm);
 				*earw = val;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				SaveMw(eaa, val);
 			}
 			break;
@@ -564,7 +568,7 @@
 				Bit16u *earw = GetEArw(rm);
 				val = *earw;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				val = LoadMw(eaa);
 			}
 			switch (which) {
@@ -584,13 +588,13 @@
 		}							
 	CASE_W(0x8f)												/* POP Ew */
 		{
-			Bit16u val=Pop_16();
+			Bit16u val=CPU_Pop16();
 			Bit8u rm = Fetchb();
 			if (rm >= 0xc0) {
 				Bit16u *earw = GetEArw(rm);
 				*earw = val;
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				SaveMw(eaa, val);
 			}
 			break;
@@ -662,25 +666,25 @@
 		break;
 	CASE_B(0xa0)												/* MOV AL,Ob */
 		{
-			GetEADirect;
+	        PhysPt eaa = GetEADirect(TEST_PREFIX_ADDR, BaseDS);
 			reg_al=LoadMb(eaa);
 		}
 		break;
 	CASE_W(0xa1)												/* MOV AX,Ow */
 		{
-			GetEADirect;
+	        PhysPt eaa = GetEADirect(TEST_PREFIX_ADDR, BaseDS);
 			reg_ax=LoadMw(eaa);
 		}
 		break;
 	CASE_B(0xa2)												/* MOV Ob,AL */
 		{
-			GetEADirect;
+	        PhysPt eaa = GetEADirect(TEST_PREFIX_ADDR, BaseDS);
 			SaveMb(eaa,reg_al);
 		}
 		break;
 	CASE_W(0xa3)												/* MOV Ow,AX */
 		{
-			GetEADirect;
+	        PhysPt eaa = GetEADirect(TEST_PREFIX_ADDR, BaseDS);
 			SaveMw(eaa,reg_ax);
 		}
 		break;
@@ -745,18 +749,18 @@
 	CASE_W(0xc1)												/* GRP2 Ew,Ib */
 		GRP2W(Fetchb());break;
 	CASE_W(0xc2)												/* RETN Iw */
-		reg_eip=Pop_16();
+		reg_eip=CPU_Pop16();
 		reg_esp+=Fetchw();
 		continue;
 	CASE_W(0xc3)												/* RETN */
-		reg_eip=Pop_16();
+		reg_eip=CPU_Pop16();
 		continue;
 	CASE_W(0xc4)												/* LES */
 		{	
 			Bit8u rm = Fetchb();
 	        Bit16u *rmrw = Getrw(rm);
 			if (rm >= 0xc0) goto illegal_opcode;
-			GetEAa;
+			PhysPt eaa = core.ea_table[rm](); 
 			if (CPU_SetSegGeneral(es,LoadMw(eaa+2))) RUNEXCEPTION();
 			*rmrw=LoadMw(eaa);
 			break;
@@ -766,7 +770,7 @@
 			Bit8u rm = Fetchb();
 			Bit16u *rmrw = Getrw(rm);
 			if (rm >= 0xc0) goto illegal_opcode;
-			GetEAa;
+			PhysPt eaa = core.ea_table[rm](); 
 			if (CPU_SetSegGeneral(ds,LoadMw(eaa+2))) RUNEXCEPTION();
 			*rmrw=LoadMw(eaa);
 			break;
@@ -778,7 +782,7 @@
 				Bit8u* earb = GetEArb(rm);
 				*earb=Fetchb();
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				SaveMb(eaa,Fetchb());
 			}
 			break;
@@ -790,7 +794,7 @@
 				Bit16u *earw = GetEArw(rm);
 				*earw = Fetchw();
 			} else {
-				GetEAa;
+				PhysPt eaa = core.ea_table[rm](); 
 				SaveMw(eaa,Fetchw());
 			}
 			break;
@@ -805,7 +809,7 @@
 	CASE_W(0xc9)												/* LEAVE */
 		reg_esp&=cpu.stack.notmask;
 		reg_esp|=(reg_ebp&cpu.stack.mask);
-		reg_bp=Pop_16();
+		reg_bp=CPU_Pop16();
 		break;
 	CASE_W(0xca)												/* RETF Iw */
 		{
@@ -918,7 +922,7 @@
 		{
 			LOG(LOG_CPU,LOG_NORMAL)("FPU used");
 			Bit8u rm=Fetchb();
-			if (rm<0xc0) GetEAa;
+			if (rm<0xc0) PhysPt eaa = core.ea_table[rm](); 
 		}
 		break;
 #endif
@@ -978,7 +982,7 @@
 		{ 
 			Bit16u addip=Fetchws();
 			SAVEIP();
-			Push_16(reg_eip);
+			CPU_Push16(reg_eip);
 			reg_eip=(Bit16u)(reg_eip+addip);
 			continue;
 		}
@@ -1061,7 +1065,7 @@
 						Bit8u *earb = GetEArb(rm);
 						TESTB(*earb,Fetchb(),LoadRb,0)
 					} else {
-						GetEAa;
+						PhysPt eaa = core.ea_table[rm](); 
 						TESTB(eaa,Fetchb(),LoadMb,0);
 					}
 					break;
@@ -1072,7 +1076,7 @@
 						Bit8u *earb = GetEArb(rm);
 						*earb=~*earb;
 					} else {
-						GetEAa;
+						PhysPt eaa = core.ea_table[rm](); 
 						SaveMb(eaa,~LoadMb(eaa));
 					}
 					break;
@@ -1082,12 +1086,14 @@
 					lflags.type=t_NEGb;
 					if (rm >= 0xc0) {
 						Bit8u *earb = GetEArb(rm);
-						lf_var1b=*earb;
-						lf_resb=0-lf_var1b;
-						*earb=lf_resb;
+						lf_var1b = *earb;
+						lf_resb = 0-lf_var1b;
+						*earb = lf_resb;
 					} else {
-						GetEAa;lf_var1b=LoadMb(eaa);lf_resb=0-lf_var1b;
- 						SaveMb(eaa,lf_resb);
+						PhysPt eaa = core.ea_table[rm](); 
+						lf_var1b = LoadMb(eaa);
+						lf_resb = 0 - lf_var1b;
+ 						SaveMb(eaa, lf_resb);
 					}
 					break;
 				}
@@ -1118,7 +1124,7 @@
 						TESTW(*earw,Fetchw(),LoadRw,SaveRw);
 					}
 					else {
-						GetEAa;
+						PhysPt eaa = core.ea_table[rm](); 
 						TESTW(eaa,Fetchw(),LoadMw,SaveMw);
 					}
 					break;
@@ -1129,7 +1135,7 @@
 						Bit16u *earw = GetEArw(rm);
 						*earw = ~*earw;
 					} else {
-						GetEAa;
+						PhysPt eaa = core.ea_table[rm](); 
 						SaveMw(eaa, ~LoadMw(eaa));
 					}
 					break;
@@ -1143,7 +1149,7 @@
 						lf_resw = 0 - lf_var1w;
 						*earw=lf_resw;
 					} else {
-						GetEAa;
+						PhysPt eaa = core.ea_table[rm](); 
 						lf_var1w = LoadMw(eaa);
 						lf_resw = 0 - lf_var1w;
  						SaveMw(eaa, lf_resw);
@@ -1227,15 +1233,15 @@
 					Bit16u *earw = GetEArw(rm);
 					reg_eip = *earw;
 				} else {
-					GetEAa;
+					PhysPt eaa = core.ea_table[rm](); 
 					reg_eip = LoadMw(eaa);
 				}
-				Push_16(GETIP());
+				CPU_Push16(GETIP());
 				continue;
 			case 0x03:										/* CALL Ep */
 				{
 					if (rm >= 0xc0) goto illegal_opcode;
-					GetEAa;
+					PhysPt eaa = core.ea_table[rm](); 
 					Bit16u newip=LoadMw(eaa);
 					Bit16u newcs=LoadMw(eaa+2);
 					FillFlags();
@@ -1254,14 +1260,14 @@
 					Bit16u *earw = GetEArw(rm);
 					reg_eip = *earw;
 				} else {
-					GetEAa;
+					PhysPt eaa = core.ea_table[rm](); 
 					reg_eip = LoadMw(eaa);
 				}
 				continue;
 			case 0x05:										/* JMP Ep */	
 				{
 					if (rm >= 0xc0) goto illegal_opcode;
-					GetEAa;
+					PhysPt eaa = core.ea_table[rm](); 
 					Bit16u newip=LoadMw(eaa);
 					Bit16u newcs=LoadMw(eaa+2);
 					FillFlags();
@@ -1278,10 +1284,10 @@
 			case 0x06:										/* PUSH Ev */
 				if (rm >= 0xc0) {
 					Bit16u *earw = GetEArw(rm);
-					Push_16(*earw);
+					CPU_Push16(*earw);
 				} else {
-					GetEAa;
-					Push_16(LoadMw(eaa));
+					PhysPt eaa = core.ea_table[rm](); 
+					CPU_Push16(LoadMw(eaa));
 				}
 				break;
 			default:
