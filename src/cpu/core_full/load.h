@@ -19,10 +19,10 @@
 switch (inst.code.load) {
 /* General loading */
 	case L_POPwRM:
-		inst_op1_w = Pop_16();
+		inst_op1_w = CPU_Pop16();
 		goto case_L_MODRM;
 	case L_POPdRM:
-		inst_op1_d = Pop_32();
+		inst_op1_d = CPU_Pop32();
 		goto case_L_MODRM;
 	case L_MODRM_NVM:
 		if ((reg_flags & FLAG_VM) || !cpu.pmode) goto illegalopcode;
@@ -186,10 +186,10 @@ l_M_Ed:
 			inst_op1_d=inst.rm_off;
 			break;
 		case M_POPw:
-			inst_op1_d = Pop_16();
+			inst_op1_d = CPU_Pop16();
 			break;
 		case M_POPd:
-			inst_op1_d = Pop_32();
+			inst_op1_d = CPU_Pop32();
 			break;
 		case M_GRP:
 			inst.code=Groups[inst.code.op][inst.rm_index];
@@ -218,18 +218,18 @@ l_M_Ed:
 		}
 		break;
 	case L_POPw:
-		inst_op1_d = Pop_16();
+		inst_op1_d = CPU_Pop16();
 		break;
 	case L_POPd:
-		inst_op1_d = Pop_32();
+		inst_op1_d = CPU_Pop32();
 		break;
 	case L_POPfw:
-		inst_op1_d = Pop_16();
-		inst_op2_d = Pop_16();
+		inst_op1_d = CPU_Pop16();
+		inst_op2_d = CPU_Pop16();
 		break;
 	case L_POPfd:
-		inst_op1_d = Pop_32();
-		inst_op2_d = Pop_16();
+		inst_op1_d = CPU_Pop32();
+		inst_op2_d = CPU_Pop16();
 		break;
 	case L_Ib:
 		inst_op1_d=Fetchb();
@@ -359,24 +359,24 @@ l_M_Ed:
 	case D_PUSHAw:
 		{
 			Bit16u old_sp=reg_sp;
-			Push_16(reg_ax);Push_16(reg_cx);Push_16(reg_dx);Push_16(reg_bx);
-			Push_16(old_sp);Push_16(reg_bp);Push_16(reg_si);Push_16(reg_di);
+			CPU_Push16(reg_ax);CPU_Push16(reg_cx);CPU_Push16(reg_dx);CPU_Push16(reg_bx);
+			CPU_Push16(old_sp);CPU_Push16(reg_bp);CPU_Push16(reg_si);CPU_Push16(reg_di);
 		}
 		goto nextopcode;
 	case D_PUSHAd:
 		{
 			Bit32u old_esp=reg_esp;
-			Push_32(reg_eax);Push_32(reg_ecx);Push_32(reg_edx);Push_32(reg_ebx);
-			Push_32(old_esp);Push_32(reg_ebp);Push_32(reg_esi);Push_32(reg_edi);
+			CPU_Push32(reg_eax);CPU_Push32(reg_ecx);CPU_Push32(reg_edx);CPU_Push32(reg_ebx);
+			CPU_Push32(old_esp);CPU_Push32(reg_ebp);CPU_Push32(reg_esi);CPU_Push32(reg_edi);
 		}
 		goto nextopcode;
 	case D_POPAw:
-		reg_di=Pop_16();reg_si=Pop_16();reg_bp=Pop_16();Pop_16();//Don't save SP
-		reg_bx=Pop_16();reg_dx=Pop_16();reg_cx=Pop_16();reg_ax=Pop_16();
+		reg_di=CPU_Pop16();reg_si=CPU_Pop16();reg_bp=CPU_Pop16();CPU_Pop16();//Don't save SP
+		reg_bx=CPU_Pop16();reg_dx=CPU_Pop16();reg_cx=CPU_Pop16();reg_ax=CPU_Pop16();
 		goto nextopcode;
 	case D_POPAd:
-		reg_edi=Pop_32();reg_esi=Pop_32();reg_ebp=Pop_32();Pop_32();//Don't save ESP
-		reg_ebx=Pop_32();reg_edx=Pop_32();reg_ecx=Pop_32();reg_eax=Pop_32();
+		reg_edi=CPU_Pop32();reg_esi=CPU_Pop32();reg_ebp=CPU_Pop32();CPU_Pop32();//Don't save ESP
+		reg_ebx=CPU_Pop32();reg_edx=CPU_Pop32();reg_ecx=CPU_Pop32();reg_eax=CPU_Pop32();
 		goto nextopcode;
 	case D_POPSEGw:
 		if (CPU_PopSeg((SegNames)inst.code.extra,false)) RunException();
@@ -481,12 +481,12 @@ l_M_Ed:
 	case D_LEAVEw:
 		reg_esp&=cpu.stack.notmask;
 		reg_esp|=(reg_ebp&cpu.stack.mask);
-		reg_bp=Pop_16();
+		reg_bp=CPU_Pop16();
 		goto nextopcode;
 	case D_LEAVEd:
 		reg_esp&=cpu.stack.notmask;
 		reg_esp|=(reg_ebp&cpu.stack.mask);
-		reg_ebp=Pop_32();
+		reg_ebp=CPU_Pop32();
 		goto nextopcode;
 	case D_DAA:
 		DAA();

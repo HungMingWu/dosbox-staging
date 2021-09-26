@@ -86,10 +86,10 @@ switch (inst.code.save) {
 		reg_32(inst.rm_index)=inst_op1_d;
 		break;
 	case S_PUSHw:
-		Push_16(inst_op1_w);
+		CPU_Push16(inst_op1_w);
 		break;
 	case S_PUSHd:
-		Push_32(inst_op1_d);
+		CPU_Push32(inst_op1_d);
 		break;
 
 	case S_C_AIPw:

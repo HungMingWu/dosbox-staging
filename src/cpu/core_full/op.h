@@ -333,11 +333,11 @@ switch (inst.code.op) {
 		}
 	case O_CALLNw:
 		SaveIP();
-		Push_16(reg_ip);
+		CPU_Push16(reg_ip);
 		break;
 	case O_CALLNd:
 		SaveIP();
-		Push_32(reg_eip);
+		CPU_Push32(reg_eip);
 		break;
 	case O_CALLFw:
 		FillFlags();

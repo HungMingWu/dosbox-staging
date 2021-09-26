@@ -196,17 +196,9 @@ static Bit32u Fetchd() {
 	return temp;
 }
 
-#define Push_16 CPU_Push16
-#define Push_32 CPU_Push32
-#define Pop_16 CPU_Pop16
-#define Pop_32 CPU_Pop32
-
 #include "instructions.h"
 #include "core_normal/support.h"
 #include "core_normal/string.h"
-
-
-#define EALookupTable (core.ea_table)
 
 Bits CPU_Core_Prefetch_Run(void) {
 	bool invalidate_pq=false;
@@ -270,7 +262,7 @@ restart_opcode:
 		illegal_opcode:
 #if C_DEBUG	
 			{
-				Bitu len=(GETIP-reg_eip);
+				Bitu len=(GETIP()-reg_eip);
 				LOADIP();
 				if (len>16) len=16;
 				char tempcode[16*2+1];char * writecode=tempcode;
