@@ -444,7 +444,7 @@ static bool SetCurMode(VideoModeBlock modeblock[],Bit16u mode) {
 
 static void SetTextLines(void) {
 	// check for scanline backwards compatibility (VESA text modes??)
-	switch (real_readb(BIOSMEM_SEG,BIOSMEM_MODESET_CTL)&0x90) {
+	switch (real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_MODESET_CTL)&0x90) {
 	case 0x80: // 200 lines emulation
 		if (CurMode->mode <= 3) {
 			CurMode = &ModeList_VGA_Text_200lines[CurMode->mode];
@@ -463,7 +463,7 @@ static void SetTextLines(void) {
 }
 
 void INT10_SetCurMode(void) {
-	Bit16u bios_mode=(Bit16u)real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE);
+	Bit16u bios_mode=(Bit16u)real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE);
 	if (GCC_UNLIKELY(CurMode->mode!=bios_mode)) {
 		bool mode_changed=false;
 		switch (machine) {
@@ -514,14 +514,14 @@ static void FinishSetMode(bool clearmem) {
 				// PCJR cannot access the full 32k at 0xb800
 				for (Bit16u ct=0;ct<16*1024;ct++) {
 					// 0x1800 is the last 32k block in 128k, as set in the CRTCPU_PAGE register 
-					real_writew(0x1800,ct*2,0x0000);
+					real_write<uint16_t>(0x1800,ct*2,0x0000);
 				}
 				break;
 			}
 			// fall-through
 		case M_CGA2:
 			for (Bit16u ct=0;ct<16*1024;ct++) {
-				real_writew( 0xb800,ct*2,0x0000);
+				real_write<uint16_t>( 0xb800,ct*2,0x0000);
 			}
 			break;
 		case M_HERC_TEXT:
@@ -530,7 +530,7 @@ static void FinishSetMode(bool clearmem) {
 			// TODO Hercules had 32KiB compared to CGA/MDA 16KiB,
 			// but does it matter in here?
 			Bit16u seg = (CurMode->mode==7)?0xb000:0xb800;
-			for (Bit16u ct=0;ct<16*1024;ct++) real_writew(seg,ct*2,0x0720);
+			for (Bit16u ct=0;ct<16*1024;ct++) real_write<uint16_t>(seg,ct*2,0x0720);
 			break;
 		}
 		case M_EGA:
@@ -557,19 +557,19 @@ static void FinishSetMode(bool clearmem) {
 		}
 	}
 	//  Setup the BIOS
-	if (CurMode->mode<128) real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE,(Bit8u)CurMode->mode);
-	else real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE,(Bit8u)(CurMode->mode-0x98));	//Looks like the s3 bios
-	real_writew(BIOSMEM_SEG,BIOSMEM_NB_COLS,(Bit16u)CurMode->twidth);
-	real_writew(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE,(Bit16u)CurMode->plength);
-	real_writew(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS,((CurMode->mode==7 )|| (CurMode->mode==0x0f)) ? 0x3b4 : 0x3d4);
+	if (CurMode->mode<128) real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE,(Bit8u)CurMode->mode);
+	else real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE,(Bit8u)(CurMode->mode-0x98));	//Looks like the s3 bios
+	real_write<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS,(Bit16u)CurMode->twidth);
+	real_write<uint16_t>(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE,(Bit16u)CurMode->plength);
+	real_write<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS,((CurMode->mode==7 )|| (CurMode->mode==0x0f)) ? 0x3b4 : 0x3d4);
 
 	if (IS_EGAVGA_ARCH) {
-		real_writeb(BIOSMEM_SEG,BIOSMEM_NB_ROWS,(Bit8u)(CurMode->theight-1));
-		real_writew(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,(Bit16u)CurMode->cheight);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,(0x60|(clearmem?0:0x80)));
-		real_writeb(BIOSMEM_SEG,BIOSMEM_SWITCHES,0x09);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_NB_ROWS,(Bit8u)(CurMode->theight-1));
+		real_write<uint16_t>(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,(Bit16u)CurMode->cheight);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,(0x60|(clearmem?0:0x80)));
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_SWITCHES,0x09);
 		// this is an index into the dcc table:
-		if (IS_VGA_ARCH) real_writeb(BIOSMEM_SEG,BIOSMEM_DCC_INDEX,0x0b);
+		if (IS_VGA_ARCH) real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_DCC_INDEX,0x0b);
 
 		//  Set font pointer
 		if (CurMode->mode<=3 || CurMode->mode==7)
@@ -610,7 +610,7 @@ static bool INT10_SetVideoMode_OTHER(Bit16u mode, bool clearmem)
 		break;
 	case MCH_HERC:
 		// Allow standard color modes if equipment word is not set to mono (Victory Road)
-		if ((real_readw(BIOSMEM_SEG,BIOSMEM_INITIAL_MODE)&0x30)!=0x30 && mode<7) {
+		if ((real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_INITIAL_MODE)&0x30)!=0x30 && mode<7) {
 			SetCurMode(ModeList_OTHER,mode);
 			FinishSetMode(clearmem);
 			return true;
@@ -695,7 +695,7 @@ static bool INT10_SetVideoMode_OTHER(Bit16u mode, bool clearmem)
 		VGA_DAC_CombineColor(0,0);
 		VGA_DAC_CombineColor(1,7);
 
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x29); // attribute controls blinking
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x29); // attribute controls blinking
 		break;
 	case MCH_CGA:
 		mode_control=mode_control_list[CurMode->mode];
@@ -703,8 +703,8 @@ static bool INT10_SetVideoMode_OTHER(Bit16u mode, bool clearmem)
 		else color_select=0x30;
 		IO_WriteB(0x3d8,mode_control);
 		IO_WriteB(0x3d9,color_select);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,mode_control);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,color_select);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,mode_control);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,color_select);
 		if (mono_cga) Mono_CGA_Palette();
 		break;
 	case MCH_TANDY:
@@ -735,14 +735,14 @@ static bool INT10_SetVideoMode_OTHER(Bit16u mode, bool clearmem)
 		IO_WriteB(0x3de,0x0);
 		crtpage=(CurMode->mode>=0x9) ? 0xf6 : 0x3f;
 		IO_WriteB(0x3df,crtpage);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CRTCPU_PAGE,crtpage);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CRTCPU_PAGE,crtpage);
 		mode_control=mode_control_list[CurMode->mode];
 		if (CurMode->mode == 0x6 || CurMode->mode==0xa) color_select=0x3f;
 		else color_select=0x30;
 		IO_WriteB(0x3d8,mode_control);
 		IO_WriteB(0x3d9,color_select);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,mode_control);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,color_select);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,mode_control);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,color_select);
 		break;
 	case MCH_PCJR:
 		//  Init some registers
@@ -759,15 +759,15 @@ static bool INT10_SetVideoMode_OTHER(Bit16u mode, bool clearmem)
 		else if (CurMode->mode>=0x09) crtpage=0xf6;
 		else crtpage=0x7f;
 		IO_WriteB(0x3df,crtpage);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CRTCPU_PAGE,crtpage);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CRTCPU_PAGE,crtpage);
 
 		mode_control=mode_control_list_pcjr[CurMode->mode];
 		IO_WriteB(0x3da,0x0);IO_WriteB(0x3da,mode_control);
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,mode_control);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,mode_control);
 
 		if (CurMode->mode == 0x6 || CurMode->mode==0xa) color_select=0x3f;
 		else color_select=0x30;
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,color_select);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,color_select);
 		INT10_SetColorSelect(1);
 		INT10_SetBackgroundBorder(0);
 		break;
@@ -796,7 +796,7 @@ static bool INT10_SetVideoMode_OTHER(Bit16u mode, bool clearmem)
 
 		// init CRTC registers
 		for (Bit16u i = 0; i < 16; i++)
-			IO_WriteW(crtc_base, i | (real_readb(RealSeg(vparams), 
+			IO_WriteW(crtc_base, i | (real_read<uint8_t>(RealSeg(vparams), 
 				RealOff(vparams) + i + crtc_block_index*16) << 8));
 	}
 	FinishSetMode(clearmem);
@@ -823,9 +823,9 @@ bool INT10_SetVideoMode(Bit16u mode)
 		return INT10_SetVideoMode_OTHER(mode, clearmem);
 
 	//  First read mode setup settings from bios area
-	//	Bit8u video_ctl=real_readb(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL);
-	//	Bit8u vga_switches=real_readb(BIOSMEM_SEG,BIOSMEM_SWITCHES);
-	Bit8u modeset_ctl = real_readb(BIOSMEM_SEG, BIOSMEM_MODESET_CTL);
+	//	Bit8u video_ctl=real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL);
+	//	Bit8u vga_switches=real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_SWITCHES);
+	Bit8u modeset_ctl = real_read<uint8_t>(BIOSMEM_SEG, BIOSMEM_MODESET_CTL);
 
 	if (IS_VGA_ARCH) {
 		if (svga.accepts_mode) {
@@ -1381,7 +1381,7 @@ bool INT10_SetVideoMode(Bit16u mode)
 			att_data[0x13]=0x00;
 			att_data[0x10]=0x08;	//Color Text with blinking, 8 Bit characters
 		}
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,0x30);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,0x30);
 att_text16:
 		if (CurMode->mode==7) {
 			att_data[0]=0x00;
@@ -1403,7 +1403,7 @@ att_text16:
 		att_data[0]=0x0;
 		for (i=1;i<0x10;i++) att_data[i]=0x17;
 		att_data[0x12]=0x1;			//Only enable 1 plane
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,0x3f);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,0x3f);
 		break;
 	case M_CGA4:
 		att_data[0x10]=0x01;		//Color Graphics
@@ -1417,7 +1417,7 @@ att_text16:
 		att_data[7]=0x07;
 		for (Bit8u ct=0x8;ct<0x10;ct++) 
 			att_data[ct] = ct + 0x8;
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,0x30);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,0x30);
 		break;
 	case M_VGA:
 	case M_LIN8:
@@ -1544,7 +1544,7 @@ dac_text16:
 		}
 		if (IS_VGA_ARCH) {
 			//  check if gray scale summing is enabled
-			if (real_readb(BIOSMEM_SEG,BIOSMEM_MODESET_CTL) & 2) {
+			if (real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_MODESET_CTL) & 2) {
 				INT10_PerformGrayScaleSumming(0,256);
 			}
 		}
@@ -1558,31 +1558,31 @@ dac_text16:
 		IO_Write(0x3c0,0x20); //Disable palette access
 	}
 	//  Write palette register data to dynamic save area if pointer is non-zero
-	RealPt vsavept=real_readd(BIOSMEM_SEG,BIOSMEM_VS_POINTER);
-	RealPt dsapt=real_readd(RealSeg(vsavept),RealOff(vsavept)+4);
+	RealPt vsavept=real_read<uint32_t>(BIOSMEM_SEG,BIOSMEM_VS_POINTER);
+	RealPt dsapt=real_read<uint32_t>(RealSeg(vsavept),RealOff(vsavept)+4);
 	if (dsapt) {
 		for (Bit8u ct=0;ct<0x10;ct++) {
-			real_writeb(RealSeg(dsapt),RealOff(dsapt)+ct,att_data[ct]);
+			real_write<uint8_t>(RealSeg(dsapt),RealOff(dsapt)+ct,att_data[ct]);
 		}
-		real_writeb(RealSeg(dsapt),RealOff(dsapt)+0x10,0); // overscan
+		real_write<uint8_t>(RealSeg(dsapt),RealOff(dsapt)+0x10,0); // overscan
 	}
 	//  Setup some special stuff for different modes
 	switch (CurMode->type) {
 	case M_CGA2:
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x1e);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x1e);
 		break;
 	case M_CGA4:
-		if (CurMode->mode==4) real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x2a);
-		else if (CurMode->mode==5) real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x2e);
-		else real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x2);
+		if (CurMode->mode==4) real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x2a);
+		else if (CurMode->mode==5) real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x2e);
+		else real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x2);
 		break;
 	case M_TEXT:
 		switch (CurMode->mode) {
-		case 0:real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x2c);break;
-		case 1:real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x28);break;
-		case 2:real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x2d);break;
+		case 0:real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x2c);break;
+		case 1:real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x28);break;
+		case 2:real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x2d);break;
 		case 3:
-		case 7:real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x29);break;
+		case 7:real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x29);break;
 		}
 		break;
 	default:

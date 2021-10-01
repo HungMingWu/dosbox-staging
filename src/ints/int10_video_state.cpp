@@ -44,43 +44,43 @@ bool INT10_VideoState_Save(Bitu state,RealPt buffer) {
 	Bitu base_dest=RealOff(buffer)+0x20;
 
 	if (state&1)  {
-		real_writew(base_seg,RealOff(buffer),base_dest);
+		real_write<uint16_t>(base_seg,RealOff(buffer),base_dest);
 
-		Bit16u crt_reg=real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
-		real_writew(base_seg,base_dest+0x40,crt_reg);
+		Bit16u crt_reg=real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
+		real_write<uint16_t>(base_seg,base_dest+0x40,crt_reg);
 
-		real_writeb(base_seg,base_dest+0x00,IO_ReadB(0x3c4));
-		real_writeb(base_seg,base_dest+0x01,IO_ReadB(0x3d4));
-		real_writeb(base_seg,base_dest+0x02,IO_ReadB(0x3ce));
+		real_write<uint8_t>(base_seg,base_dest+0x00,IO_ReadB(0x3c4));
+		real_write<uint8_t>(base_seg,base_dest+0x01,IO_ReadB(0x3d4));
+		real_write<uint8_t>(base_seg,base_dest+0x02,IO_ReadB(0x3ce));
 		IO_ReadB(crt_reg+6);
-		real_writeb(base_seg,base_dest+0x03,IO_ReadB(0x3c0));
-		real_writeb(base_seg,base_dest+0x04,IO_ReadB(0x3ca));
+		real_write<uint8_t>(base_seg,base_dest+0x03,IO_ReadB(0x3c0));
+		real_write<uint8_t>(base_seg,base_dest+0x04,IO_ReadB(0x3ca));
 
 		// sequencer
 		for (ct=1; ct<5; ct++) {
 			IO_WriteB(0x3c4,ct);
-			real_writeb(base_seg,base_dest+0x04+ct,IO_ReadB(0x3c5));
+			real_write<uint8_t>(base_seg,base_dest+0x04+ct,IO_ReadB(0x3c5));
 		}
 
-		real_writeb(base_seg,base_dest+0x09,IO_ReadB(0x3cc));
+		real_write<uint8_t>(base_seg,base_dest+0x09,IO_ReadB(0x3cc));
 
 		// crt controller
 		for (ct=0; ct<0x19; ct++) {
 			IO_WriteB(crt_reg,ct);
-			real_writeb(base_seg,base_dest+0x0a+ct,IO_ReadB(crt_reg+1));
+			real_write<uint8_t>(base_seg,base_dest+0x0a+ct,IO_ReadB(crt_reg+1));
 		}
 
 		// attr registers
 		for (ct=0; ct<4; ct++) {
 			IO_ReadB(crt_reg+6);
 			IO_WriteB(0x3c0,0x10+ct);
-			real_writeb(base_seg,base_dest+0x33+ct,IO_ReadB(0x3c1));
+			real_write<uint8_t>(base_seg,base_dest+0x33+ct,IO_ReadB(0x3c1));
 		}
 
 		// graphics registers
 		for (ct=0; ct<9; ct++) {
 			IO_WriteB(0x3ce,ct);
-			real_writeb(base_seg,base_dest+0x37+ct,IO_ReadB(0x3cf));
+			real_write<uint8_t>(base_seg,base_dest+0x37+ct,IO_ReadB(0x3cf));
 		}
 
 		// save some registers
@@ -104,7 +104,7 @@ bool INT10_VideoState_Save(Bitu state,RealPt buffer) {
 
 		for (ct=0; ct<4; ct++) {
 			IO_WriteW(0x3ce,0x0004+ct*0x100);
-			real_writeb(base_seg,base_dest+0x42+ct,mem_readb(0xaffff));
+			real_write<uint8_t>(base_seg,base_dest+0x42+ct,mem_readb(0xaffff));
 		}
 
 		// restore registers
@@ -117,7 +117,7 @@ bool INT10_VideoState_Save(Bitu state,RealPt buffer) {
 		for (ct=0; ct<0x10; ct++) {
 			IO_ReadB(crt_reg+6);
 			IO_WriteB(0x3c0,ct);
-			real_writeb(base_seg,base_dest+0x23+ct,IO_ReadB(0x3c1));
+			real_write<uint8_t>(base_seg,base_dest+0x23+ct,IO_ReadB(0x3c1));
 		}
 		IO_WriteB(0x3c0,0x20);
 
@@ -125,45 +125,45 @@ bool INT10_VideoState_Save(Bitu state,RealPt buffer) {
 	}
 
 	if (state&2)  {
-		real_writew(base_seg,RealOff(buffer)+2,base_dest);
+		real_write<uint16_t>(base_seg,RealOff(buffer)+2,base_dest);
 
-		real_writeb(base_seg,base_dest+0x00,mem_readb(0x410)&0x30);
+		real_write<uint8_t>(base_seg,base_dest+0x00,mem_readb(0x410)&0x30);
 		for (ct=0; ct<0x1e; ct++) {
-			real_writeb(base_seg,base_dest+0x01+ct,mem_readb(0x449+ct));
+			real_write<uint8_t>(base_seg,base_dest+0x01+ct,mem_readb(0x449+ct));
 		}
 		for (ct=0; ct<0x07; ct++) {
-			real_writeb(base_seg,base_dest+0x1f+ct,mem_readb(0x484+ct));
+			real_write<uint8_t>(base_seg,base_dest+0x1f+ct,mem_readb(0x484+ct));
 		}
-		real_writed(base_seg,base_dest+0x26,mem_readd(0x48a));
-		real_writed(base_seg,base_dest+0x2a,mem_readd(0x14));	// int 5
-		real_writed(base_seg,base_dest+0x2e,mem_readd(0x74));	// int 1d
-		real_writed(base_seg,base_dest+0x32,mem_readd(0x7c));	// int 1f
-		real_writed(base_seg,base_dest+0x36,mem_readd(0x10c));	// int 43
+		real_write<uint32_t>(base_seg,base_dest+0x26,mem_readd(0x48a));
+		real_write<uint32_t>(base_seg,base_dest+0x2a,mem_readd(0x14));	// int 5
+		real_write<uint32_t>(base_seg,base_dest+0x2e,mem_readd(0x74));	// int 1d
+		real_write<uint32_t>(base_seg,base_dest+0x32,mem_readd(0x7c));	// int 1f
+		real_write<uint32_t>(base_seg,base_dest+0x36,mem_readd(0x10c));	// int 43
 
 		base_dest+=0x3a;
 	}
 
 	if (state&4)  {
-		real_writew(base_seg,RealOff(buffer)+4,base_dest);
+		real_write<uint16_t>(base_seg,RealOff(buffer)+4,base_dest);
 
-		Bit16u crt_reg=real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
+		Bit16u crt_reg=real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
 
 		IO_ReadB(crt_reg+6);
 		IO_WriteB(0x3c0,0x14);
-		real_writeb(base_seg,base_dest+0x303,IO_ReadB(0x3c1));
+		real_write<uint8_t>(base_seg,base_dest+0x303,IO_ReadB(0x3c1));
 
 		Bitu dac_state=IO_ReadB(0x3c7)&1;
 		Bitu dac_windex=IO_ReadB(0x3c8);
 		if (dac_state!=0) dac_windex--;
-		real_writeb(base_seg,base_dest+0x000,dac_state);
-		real_writeb(base_seg,base_dest+0x001,dac_windex);
-		real_writeb(base_seg,base_dest+0x002,IO_ReadB(0x3c6));
+		real_write<uint8_t>(base_seg,base_dest+0x000,dac_state);
+		real_write<uint8_t>(base_seg,base_dest+0x001,dac_windex);
+		real_write<uint8_t>(base_seg,base_dest+0x002,IO_ReadB(0x3c6));
 
 		for (ct=0; ct<0x100; ct++) {
 			IO_WriteB(0x3c7,ct);
-			real_writeb(base_seg,base_dest+0x003+ct*3+0,IO_ReadB(0x3c9));
-			real_writeb(base_seg,base_dest+0x003+ct*3+1,IO_ReadB(0x3c9));
-			real_writeb(base_seg,base_dest+0x003+ct*3+2,IO_ReadB(0x3c9));
+			real_write<uint8_t>(base_seg,base_dest+0x003+ct*3+0,IO_ReadB(0x3c9));
+			real_write<uint8_t>(base_seg,base_dest+0x003+ct*3+1,IO_ReadB(0x3c9));
+			real_write<uint8_t>(base_seg,base_dest+0x003+ct*3+2,IO_ReadB(0x3c9));
 		}
 
 		IO_ReadB(crt_reg+6);
@@ -173,20 +173,20 @@ bool INT10_VideoState_Save(Bitu state,RealPt buffer) {
 	}
 
 	if ((svgaCard==SVGA_S3Trio) && (state&8))  {
-		real_writew(base_seg,RealOff(buffer)+6,base_dest);
+		real_write<uint16_t>(base_seg,RealOff(buffer)+6,base_dest);
 
-		Bit16u crt_reg=real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
+		Bit16u crt_reg=real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
 
 		IO_WriteB(0x3c4,0x08);
 //		Bitu seq_8=IO_ReadB(0x3c5);
 		IO_ReadB(0x3c5);
-//		real_writeb(base_seg,base_dest+0x00,IO_ReadB(0x3c5));
+//		real_write<uint8_t>(base_seg,base_dest+0x00,IO_ReadB(0x3c5));
 		IO_WriteB(0x3c5,0x06);	// unlock s3-specific registers
 
 		// sequencer
 		for (ct=0; ct<0x13; ct++) {
 			IO_WriteB(0x3c4,0x09+ct);
-			real_writeb(base_seg,base_dest+0x00+ct,IO_ReadB(0x3c5));
+			real_write<uint8_t>(base_seg,base_dest+0x00+ct,IO_ReadB(0x3c5));
 		}
 
 		// unlock s3-specific registers
@@ -200,12 +200,12 @@ bool INT10_VideoState_Save(Bitu state,RealPt buffer) {
 				IO_WriteB(crt_reg,0x45);
 				IO_ReadB(crt_reg+1);
 				IO_WriteB(crt_reg,0x30+ct);
-				real_writeb(base_seg,base_dest+(ct_dest++),IO_ReadB(crt_reg+1));
-				real_writeb(base_seg,base_dest+(ct_dest++),IO_ReadB(crt_reg+1));
-				real_writeb(base_seg,base_dest+(ct_dest++),IO_ReadB(crt_reg+1));
+				real_write<uint8_t>(base_seg,base_dest+(ct_dest++),IO_ReadB(crt_reg+1));
+				real_write<uint8_t>(base_seg,base_dest+(ct_dest++),IO_ReadB(crt_reg+1));
+				real_write<uint8_t>(base_seg,base_dest+(ct_dest++),IO_ReadB(crt_reg+1));
 			} else {
 				IO_WriteB(crt_reg,0x30+ct);
-				real_writeb(base_seg,base_dest+(ct_dest++),IO_ReadB(crt_reg+1));
+				real_write<uint8_t>(base_seg,base_dest+(ct_dest++),IO_ReadB(crt_reg+1));
 			}
 		}
 	}
@@ -220,8 +220,8 @@ bool INT10_VideoState_Restore(Bitu state,RealPt buffer) {
 	Bit16u base_dest;
 
 	if (state&1)  {
-		base_dest=real_readw(base_seg,RealOff(buffer));
-		Bit16u crt_reg=real_readw(base_seg,base_dest+0x40);
+		base_dest=real_read<uint16_t>(base_seg,RealOff(buffer));
+		Bit16u crt_reg=real_read<uint16_t>(base_seg,base_dest+0x40);
 
 		// reprogram for full access to plane latches
 		IO_WriteW(0x3c4,0x0704);
@@ -229,13 +229,13 @@ bool INT10_VideoState_Restore(Bitu state,RealPt buffer) {
 		IO_WriteW(0x3ce,0x0005);
 
 		IO_WriteW(0x3c4,0x0002);
-		mem_writeb(0xaffff,real_readb(base_seg,base_dest+0x42));
+		mem_writeb(0xaffff,real_read<uint8_t>(base_seg,base_dest+0x42));
 		IO_WriteW(0x3c4,0x0102);
-		mem_writeb(0xaffff,real_readb(base_seg,base_dest+0x43));
+		mem_writeb(0xaffff,real_read<uint8_t>(base_seg,base_dest+0x43));
 		IO_WriteW(0x3c4,0x0202);
-		mem_writeb(0xaffff,real_readb(base_seg,base_dest+0x44));
+		mem_writeb(0xaffff,real_read<uint8_t>(base_seg,base_dest+0x44));
 		IO_WriteW(0x3c4,0x0402);
-		mem_writeb(0xaffff,real_readb(base_seg,base_dest+0x45));
+		mem_writeb(0xaffff,real_read<uint8_t>(base_seg,base_dest+0x45));
 		IO_WriteW(0x3c4,0x0f02);
 		mem_readb(0xaffff);
 
@@ -243,104 +243,104 @@ bool INT10_VideoState_Restore(Bitu state,RealPt buffer) {
 
 		// sequencer
 		for (ct=1; ct<5; ct++) {
-			IO_WriteW(0x3c4,ct+(real_readb(base_seg,base_dest+0x04+ct)<<8));
+			IO_WriteW(0x3c4,ct+(real_read<uint8_t>(base_seg,base_dest+0x04+ct)<<8));
 		}
 
-		IO_WriteB(0x3c2,real_readb(base_seg,base_dest+0x09));
+		IO_WriteB(0x3c2,real_read<uint8_t>(base_seg,base_dest+0x09));
 		IO_WriteW(0x3c4,0x0300);
 		IO_WriteW(crt_reg,0x0011);
 
 		// crt controller
 		for (ct=0; ct<0x19; ct++) {
-			IO_WriteW(crt_reg,ct+(real_readb(base_seg,base_dest+0x0a+ct)<<8));
+			IO_WriteW(crt_reg,ct+(real_read<uint8_t>(base_seg,base_dest+0x0a+ct)<<8));
 		}
 
 		IO_ReadB(crt_reg+6);
 		// attr registers
 		for (ct=0; ct<4; ct++) {
 			IO_WriteB(0x3c0,0x10+ct);
-			IO_WriteB(0x3c0,real_readb(base_seg,base_dest+0x33+ct));
+			IO_WriteB(0x3c0,real_read<uint8_t>(base_seg,base_dest+0x33+ct));
 		}
 
 		// graphics registers
 		for (ct=0; ct<9; ct++) {
-			IO_WriteW(0x3ce,ct+(real_readb(base_seg,base_dest+0x37+ct)<<8));
+			IO_WriteW(0x3ce,ct+(real_read<uint8_t>(base_seg,base_dest+0x37+ct)<<8));
 		}
 
-		IO_WriteB(crt_reg+6,real_readb(base_seg,base_dest+0x04));
+		IO_WriteB(crt_reg+6,real_read<uint8_t>(base_seg,base_dest+0x04));
 		IO_ReadB(crt_reg+6);
 
 		// attr registers
 		for (ct=0; ct<0x10; ct++) {
 			IO_WriteB(0x3c0,ct);
-			IO_WriteB(0x3c0,real_readb(base_seg,base_dest+0x23+ct));
+			IO_WriteB(0x3c0,real_read<uint8_t>(base_seg,base_dest+0x23+ct));
 		}
 
-		IO_WriteB(0x3c4,real_readb(base_seg,base_dest+0x00));
-		IO_WriteB(0x3d4,real_readb(base_seg,base_dest+0x01));
-		IO_WriteB(0x3ce,real_readb(base_seg,base_dest+0x02));
+		IO_WriteB(0x3c4,real_read<uint8_t>(base_seg,base_dest+0x00));
+		IO_WriteB(0x3d4,real_read<uint8_t>(base_seg,base_dest+0x01));
+		IO_WriteB(0x3ce,real_read<uint8_t>(base_seg,base_dest+0x02));
 		IO_ReadB(crt_reg+6);
-		IO_WriteB(0x3c0,real_readb(base_seg,base_dest+0x03));
+		IO_WriteB(0x3c0,real_read<uint8_t>(base_seg,base_dest+0x03));
 	}
 
 	if (state&2)  {
-		base_dest=real_readw(base_seg,RealOff(buffer)+2);
+		base_dest=real_read<uint16_t>(base_seg,RealOff(buffer)+2);
 
-		mem_writeb(0x410,(mem_readb(0x410)&0xcf) | real_readb(base_seg,base_dest+0x00));
+		mem_writeb(0x410,(mem_readb(0x410)&0xcf) | real_read<uint8_t>(base_seg,base_dest+0x00));
 		for (ct=0; ct<0x1e; ct++) {
-			mem_writeb(0x449+ct,real_readb(base_seg,base_dest+0x01+ct));
+			mem_writeb(0x449+ct,real_read<uint8_t>(base_seg,base_dest+0x01+ct));
 		}
 		for (ct=0; ct<0x07; ct++) {
-			mem_writeb(0x484+ct,real_readb(base_seg,base_dest+0x1f+ct));
+			mem_writeb(0x484+ct,real_read<uint8_t>(base_seg,base_dest+0x1f+ct));
 		}
-		mem_writed(0x48a,real_readd(base_seg,base_dest+0x26));
-		mem_writed(0x14,real_readd(base_seg,base_dest+0x2a));	// int 5
-		mem_writed(0x74,real_readd(base_seg,base_dest+0x2e));	// int 1d
-		mem_writed(0x7c,real_readd(base_seg,base_dest+0x32));	// int 1f
-		mem_writed(0x10c,real_readd(base_seg,base_dest+0x36));	// int 43
+		mem_writed(0x48a,real_read<uint32_t>(base_seg,base_dest+0x26));
+		mem_writed(0x14,real_read<uint32_t>(base_seg,base_dest+0x2a));	// int 5
+		mem_writed(0x74,real_read<uint32_t>(base_seg,base_dest+0x2e));	// int 1d
+		mem_writed(0x7c,real_read<uint32_t>(base_seg,base_dest+0x32));	// int 1f
+		mem_writed(0x10c,real_read<uint32_t>(base_seg,base_dest+0x36));	// int 43
 	}
 
 	if (state&4)  {
-		base_dest=real_readw(base_seg,RealOff(buffer)+4);
+		base_dest=real_read<uint16_t>(base_seg,RealOff(buffer)+4);
 
-		Bit16u crt_reg=real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
+		Bit16u crt_reg=real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
 
-		IO_WriteB(0x3c6,real_readb(base_seg,base_dest+0x002));
+		IO_WriteB(0x3c6,real_read<uint8_t>(base_seg,base_dest+0x002));
 
 		for (ct=0; ct<0x100; ct++) {
 			IO_WriteB(0x3c8,ct);
-			IO_WriteB(0x3c9,real_readb(base_seg,base_dest+0x003+ct*3+0));
-			IO_WriteB(0x3c9,real_readb(base_seg,base_dest+0x003+ct*3+1));
-			IO_WriteB(0x3c9,real_readb(base_seg,base_dest+0x003+ct*3+2));
+			IO_WriteB(0x3c9,real_read<uint8_t>(base_seg,base_dest+0x003+ct*3+0));
+			IO_WriteB(0x3c9,real_read<uint8_t>(base_seg,base_dest+0x003+ct*3+1));
+			IO_WriteB(0x3c9,real_read<uint8_t>(base_seg,base_dest+0x003+ct*3+2));
 		}
 
 		IO_ReadB(crt_reg+6);
 		IO_WriteB(0x3c0,0x14);
-		IO_WriteB(0x3c0,real_readb(base_seg,base_dest+0x303));
+		IO_WriteB(0x3c0,real_read<uint8_t>(base_seg,base_dest+0x303));
 
-		Bitu dac_state=real_readb(base_seg,base_dest+0x000);
+		Bitu dac_state=real_read<uint8_t>(base_seg,base_dest+0x000);
 		if (dac_state==0) {
-			IO_WriteB(0x3c8,real_readb(base_seg,base_dest+0x001));
+			IO_WriteB(0x3c8,real_read<uint8_t>(base_seg,base_dest+0x001));
 		} else {
-			IO_WriteB(0x3c7,real_readb(base_seg,base_dest+0x001));
+			IO_WriteB(0x3c7,real_read<uint8_t>(base_seg,base_dest+0x001));
 		}
 	}
 
 	if ((svgaCard==SVGA_S3Trio) && (state&8))  {
-		base_dest=real_readw(base_seg,RealOff(buffer)+6);
+		base_dest=real_read<uint16_t>(base_seg,RealOff(buffer)+6);
 
-		Bit16u crt_reg=real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
+		Bit16u crt_reg=real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
 
 		Bitu seq_idx=IO_ReadB(0x3c4);
 		IO_WriteB(0x3c4,0x08);
 //		Bitu seq_8=IO_ReadB(0x3c5);
 		IO_ReadB(0x3c5);
-//		real_writeb(base_seg,base_dest+0x00,IO_ReadB(0x3c5));
+//		real_write<uint8_t>(base_seg,base_dest+0x00,IO_ReadB(0x3c5));
 		IO_WriteB(0x3c5,0x06);	// unlock s3-specific registers
 
 		// sequencer
 		for (ct=0; ct<0x13; ct++) {
-			IO_WriteW(0x3c4,(0x09+ct)+(real_readb(base_seg,base_dest+0x00+ct)<<8));
+			IO_WriteW(0x3c4,(0x09+ct)+(real_read<uint8_t>(base_seg,base_dest+0x00+ct)<<8));
 		}
 		IO_WriteB(0x3c4,seq_idx);
 
@@ -357,9 +357,9 @@ bool INT10_VideoState_Restore(Bitu state,RealPt buffer) {
 				IO_WriteB(crt_reg,0x45);
 				IO_ReadB(crt_reg+1);
 				IO_WriteB(crt_reg,0x30+ct);
-				IO_WriteB(crt_reg,real_readb(base_seg,base_dest+(ct_dest++)));
+				IO_WriteB(crt_reg,real_read<uint8_t>(base_seg,base_dest+(ct_dest++)));
 			} else {
-				IO_WriteW(crt_reg,(0x30+ct)+(real_readb(base_seg,base_dest+(ct_dest++))<<8));
+				IO_WriteW(crt_reg,(0x30+ct)+(real_read<uint8_t>(base_seg,base_dest+(ct_dest++))<<8));
 			}
 		}
 
@@ -371,7 +371,7 @@ bool INT10_VideoState_Restore(Bitu state,RealPt buffer) {
 		Bitu sysva2=IO_ReadB(crt_reg+1);
 		IO_WriteB(crt_reg+1,sysval2|0x10);
 
-		real_writew(0xa000,0x8128,0xffff);
+		real_write<uint16_t>(0xa000,0x8128,0xffff);
 
 		IO_WriteB(crt_reg,0x40);
 		IO_WriteB(crt_reg,sysval1);

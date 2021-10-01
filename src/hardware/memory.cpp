@@ -118,8 +118,6 @@ public:
 	}
 };
 
-
-
 static IllegalPageHandler illegal_page_handler;
 static RAMPageHandler ram_page_handler;
 static ROMPageHandler rom_page_handler;
@@ -130,7 +128,7 @@ void MEM_SetLFB(Bitu page, Bitu pages, PageHandler *handler, PageHandler *mmioha
 	memory.lfb.start_page=page;
 	memory.lfb.end_page=page+pages;
 	memory.lfb.pages=pages;
-	PAGING_ClearTLB();
+	paging.clearTLB();
 }
 
 PageHandler * MEM_GetPageHandler(Bitu phys_page) {
@@ -422,7 +420,7 @@ bool MEM_A20_Enabled(void) {
 
 void MEM_A20_Enable(bool enabled) {
 	Bitu phys_base=enabled ? (1024/4) : 0;
-	for (Bitu i=0;i<16;i++) PAGING_MapPage((1024/4)+i,phys_base+i);
+	for (Bitu i=0;i<16;i++) paging.MapPage((1024/4)+i,phys_base+i);
 	memory.a20.enabled=enabled;
 }
 

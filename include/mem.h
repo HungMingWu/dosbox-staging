@@ -58,29 +58,16 @@ void MEM_PreparePCJRCartRom();
 MemHandle MEM_NextHandle(MemHandle handle);
 MemHandle MEM_NextHandleAt(MemHandle handle, Bitu where);
 
-static inline void var_write(uint8_t *var, uint8_t val)
+template <typename T>
+inline void var_write(T *var, T val)
 {
-	host_writeb(var, val);
+	host_write<uint8_t>((HostPt)var, val);
 }
 
-static inline void var_write(uint16_t *var, uint16_t val)
+template <typename T>
+inline T var_read(T *var)
 {
-	host_writew((HostPt)var, val);
-}
-
-static inline void var_write(uint32_t *var, uint32_t val)
-{
-	host_writed((HostPt)var, val);
-}
-
-static inline uint16_t var_read(uint16_t *var)
-{
-	return host_readw((HostPt)var);
-}
-
-static inline uint32_t var_read(uint32_t *var)
-{
-	return host_readd((HostPt)var);
+	return host_read<T>((HostPt)var);
 }
 
 /* The Following six functions are slower but they recognize the paged memory
@@ -94,34 +81,16 @@ void mem_writeb(PhysPt pt, uint8_t val);
 void mem_writew(PhysPt pt, uint16_t val);
 void mem_writed(PhysPt pt, uint32_t val);
 
-static inline void phys_writeb(PhysPt addr, uint8_t val)
+template <typename T>
+inline void phys_write(PhysPt addr, T val)
 {
-	host_writeb(MemBase + addr, val);
+	host_write<T>(MemBase + addr, val);
 }
 
-static inline void phys_writew(PhysPt addr, uint16_t val)
+template <typename T>
+inline T phys_read(PhysPt addr)
 {
-	host_writew(MemBase + addr, val);
-}
-
-static inline void phys_writed(PhysPt addr, uint32_t val)
-{
-	host_writed(MemBase + addr, val);
-}
-
-static inline uint8_t phys_readb(PhysPt addr)
-{
-	return host_readb(MemBase + addr);
-}
-
-static inline uint16_t phys_readw(PhysPt addr)
-{
-	return host_readw(MemBase + addr);
-}
-
-static inline uint32_t phys_readd(PhysPt addr)
-{
-	return host_readd(MemBase + addr);
+	return host_read<T>(MemBase + addr);
 }
 
 /* These don't check for alignment, better be sure it's correct */
@@ -138,40 +107,33 @@ void mem_strcpy(PhysPt dest, PhysPt src);
 /* The following functions are all shortcuts to the above functions using
  * physical addressing */
 
-static inline uint8_t real_readb(uint16_t seg, uint16_t off)
+template <typename T>
+inline T real_read(uint16_t seg, uint16_t off)
 {
 	const auto base = static_cast<uint32_t>(seg << 4);
-	return mem_readb(base + off);
+	if constexpr (sizeof(T) == 1) {
+		return mem_readb(base + off);
+	} else if constexpr (sizeof(T) == 2) {
+		return mem_readw(base + off);
+	} else if constexpr (sizeof(T) == 4) {
+		return mem_readd(base + off);
+	} else {
+		return T{};
+	}
 }
 
-static inline uint16_t real_readw(uint16_t seg, uint16_t off)
+template <typename T>
+inline void real_write(uint16_t seg, uint16_t off, T val)
 {
 	const auto base = static_cast<uint32_t>(seg << 4);
-	return mem_readw(base + off);
-}
-
-static inline uint32_t real_readd(uint16_t seg, uint16_t off)
-{
-	const auto base = static_cast<uint32_t>(seg << 4);
-	return mem_readd(base + off);
-}
-
-static inline void real_writeb(uint16_t seg, uint16_t off, uint8_t val)
-{
-	const auto base = static_cast<uint32_t>(seg << 4);
-	mem_writeb(base + off, val);
-}
-
-static inline void real_writew(uint16_t seg, uint16_t off, uint16_t val)
-{
-	const auto base = static_cast<uint32_t>(seg << 4);
-	mem_writew(base + off, val);
-}
-
-static inline void real_writed(uint16_t seg, uint16_t off, uint32_t val)
-{
-	const auto base = static_cast<uint32_t>(seg << 4);
-	mem_writed(base + off, val);
+	if constexpr (sizeof(T) == 1) {
+		mem_writeb(base + off, val);
+	} else if constexpr (sizeof(T) == 2) {
+		mem_writew(base + off, val);
+	} else if constexpr (sizeof(T) == 4) {
+		mem_writed(base + off, val);
+	} else {
+	}
 }
 
 static inline uint16_t RealSeg(RealPt pt)

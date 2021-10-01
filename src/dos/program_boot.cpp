@@ -299,7 +299,7 @@ void BOOT::Run(void) {
                 fseek(tfile, 0x3000L, SEEK_SET);
                 Bit32u drd=(Bit32u) fread(rombuf, 1, 0xb000, tfile);
                 if (drd==0xb000) {
-                    for ( i = 0; i < 0xb000; i++) phys_writeb(0xf3000 + i, rombuf[i]);
+                    for ( i = 0; i < 0xb000; i++) phys_write<uint8_t>(0xf3000 + i, rombuf[i]);
                 }
                 fclose(tfile);
             }
@@ -312,7 +312,7 @@ void BOOT::Run(void) {
                     return;
                 }
 
-                PhysPt romseg_pt=host_readw(&rombuf[0x1ce])<<4;
+                PhysPt romseg_pt=host_read<uint16_t>(&rombuf[0x1ce])<<4;
 
                 /* read cartridge data into buffer */
                 fseek(usefile_2, 0x200L, SEEK_SET);
@@ -325,7 +325,7 @@ void BOOT::Run(void) {
                 //fclose(usefile_2); //usefile_2 is in diskSwap structure which should be deleted to close the file
 
                 /* write cartridge data into ROM */
-                for (i = 0; i < rombytesize_2 - 0x200; i++) phys_writeb(romseg_pt + i, rombuf[i]);
+                for (i = 0; i < rombytesize_2 - 0x200; i++) phys_write<uint8_t>(romseg_pt + i, rombuf[i]);
             }
 
             fseek(usefile_1, 0x0L, SEEK_SET);
@@ -335,7 +335,7 @@ void BOOT::Run(void) {
                 return;
             }
 
-            Bit16u romseg=host_readw(&rombuf[0x1ce]);
+            Bit16u romseg=host_read<uint16_t>(&rombuf[0x1ce]);
 
             /* read cartridge data into buffer */
             fseek(usefile_1,0x200L, SEEK_SET);
@@ -347,7 +347,7 @@ void BOOT::Run(void) {
             //fclose(usefile_1); //usefile_1 is in diskSwap structure which should be deleted to close the file
 
             /* write cartridge data into ROM */
-            for (i = 0; i < rombytesize_1 - 0x200; i++) phys_writeb((romseg << 4) + i, rombuf[i]);
+            for (i = 0; i < rombytesize_1 - 0x200; i++) phys_write<uint8_t>((romseg << 4) + i, rombuf[i]);
 
             //Close cardridges
             for (auto &disk : diskSwap)
@@ -381,14 +381,14 @@ void BOOT::Run(void) {
         disable_umb_ems_xms();
         MEM_RemoveEMSPageFrame();
         WriteOut(MSG_Get("PROGRAM_BOOT_BOOT"), drive);
-        for (i = 0; i < 512; i++) real_writeb(0, 0x7c00 + i, bootarea.rawdata[i]);
+        for (i = 0; i < 512; i++) real_write<uint8_t>(0, 0x7c00 + i, bootarea.rawdata[i]);
 
         /* create appearance of floppy drive DMA usage (Demon's Forge) */
         if (!IS_TANDY_ARCH && floppysize!=0) GetDMAChannel(2)->tcount=true;
 
         /* revector some dos-allocated interrupts */
-        real_writed(0,0x01*4,0xf000ff53);
-        real_writed(0,0x03*4,0xf000ff53);
+        real_write<uint32_t>(0,0x01*4,0xf000ff53);
+        real_write<uint32_t>(0,0x03*4,0xf000ff53);
 
         SegSet16(cs, 0);
         reg_ip = 0x7c00;

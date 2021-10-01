@@ -66,7 +66,7 @@ static Bitu INT10_Handler(void) {
 //		reg_ah=0;
 		reg_dl=CURSOR_POS_COL(reg_bh);
 		reg_dh=CURSOR_POS_ROW(reg_bh);
-		reg_cx=real_readw(BIOSMEM_SEG,BIOSMEM_CURSOR_TYPE);
+		reg_cx=real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CURSOR_TYPE);
 		break;
 	case 0x04:								/* read light pen pos YEAH RIGHT */
 		/* Light pen is not supported */
@@ -74,7 +74,7 @@ static Bitu INT10_Handler(void) {
 		break;
 	case 0x05:								/* Set Active Page */
 		if ((reg_al & 0x80) && IS_TANDY_ARCH) {
-			Bit8u crtcpu=real_readb(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE);		
+			Bit8u crtcpu=real_read<uint8_t>(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE);		
 			switch (reg_al) {
 			case 0x80:
 				reg_bh=crtcpu & 7;
@@ -96,7 +96,7 @@ static Bitu INT10_Handler(void) {
 				reg_bl=(crtcpu >> 3) & 0x7;
 			}
 			IO_WriteB(0x3df,crtcpu);
-			real_writeb(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE,crtcpu);
+			real_write<uint8_t>(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE,crtcpu);
 		}
 		else INT10_SetActivePage(reg_al);
 		break;	
@@ -110,7 +110,7 @@ static Bitu INT10_Handler(void) {
 		INT10_ReadCharAttr(&reg_ax,reg_bh);
 		break;						
 	case 0x09:								/* Write Character & Attribute at cursor CX times */
-		if (real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE)==0x11)
+		if (real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE)==0x11)
 			INT10_WriteChar(reg_al,(reg_bl&0x80)|0x3f,reg_bh,reg_cx,true);
 		else INT10_WriteChar(reg_al,reg_bl,reg_bh,reg_cx,true);
 		break;
@@ -138,10 +138,10 @@ static Bitu INT10_Handler(void) {
 		INT10_TeletypeOutput(reg_al,reg_bl);
 		break;
 	case 0x0F:								/* Get videomode */
-		reg_bh=real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE);
-		reg_al=real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE);
-		if (IS_EGAVGA_ARCH) reg_al|=real_readb(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL)&0x80;
-		reg_ah=(Bit8u)real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS);
+		reg_bh = real_read<uint8_t>(BIOSMEM_SEG, BIOSMEM_CURRENT_PAGE);
+		reg_al = real_read<uint8_t>(BIOSMEM_SEG, BIOSMEM_CURRENT_MODE);
+		if (IS_EGAVGA_ARCH) reg_al |= real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL) & 0x80;
+		reg_ah = (Bit8u)real_read<uint16_t>(BIOSMEM_SEG, BIOSMEM_NB_COLS);
 		break;					
 	case 0x10:								/* Palette functions */
 		if (!IS_EGAVGA_ARCH && (reg_al>0x02)) break;
@@ -237,28 +237,28 @@ static Bitu INT10_Handler(void) {
 			break;
 		case 0x21:			/* Set user graphics characters */
 			RealSetVec(0x43,RealMake(SegValue(es),reg_bp));
-			real_writew(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,reg_cx);
+			real_write<uint16_t>(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,reg_cx);
 			goto graphics_chars;
 		case 0x22:			/* Rom 8x14 set */
 			RealSetVec(0x43,int10.rom.font_14);
-			real_writew(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,14);
+			real_write<uint16_t>(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,14);
 			goto graphics_chars;
 		case 0x23:			/* Rom 8x8 double dot set */
 			RealSetVec(0x43,int10.rom.font_8_first);
-			real_writew(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,8);
+			real_write<uint16_t>(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,8);
 			goto graphics_chars;
 		case 0x24:			/* Rom 8x16 set */
 			if (!IS_VGA_ARCH) break;
 			RealSetVec(0x43,int10.rom.font_16);
-			real_writew(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,16);
+			real_write<uint16_t>(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,16);
 			goto graphics_chars;
 graphics_chars:
 			switch (reg_bl) {
-			case 0x00:real_writeb(BIOSMEM_SEG,BIOSMEM_NB_ROWS,reg_dl-1);break;
-			case 0x01:real_writeb(BIOSMEM_SEG,BIOSMEM_NB_ROWS,13);break;
-			case 0x03:real_writeb(BIOSMEM_SEG,BIOSMEM_NB_ROWS,42);break;
+			case 0x00:real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_NB_ROWS,reg_dl-1);break;
+			case 0x01:real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_NB_ROWS,13);break;
+			case 0x03:real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_NB_ROWS,42);break;
 			case 0x02:
-			default:real_writeb(BIOSMEM_SEG,BIOSMEM_NB_ROWS,24);break;
+			default:real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_NB_ROWS,24);break;
 			}
 			break;
 /* General */
@@ -309,8 +309,8 @@ graphics_chars:
 				break;
 			}
 			if ((reg_bh<=7) || (svgaCard==SVGA_TsengET4K)) {
-				reg_cx=real_readw(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT);
-				reg_dl=real_readb(BIOSMEM_SEG,BIOSMEM_NB_ROWS);
+				reg_cx=real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT);
+				reg_dl=real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_NB_ROWS);
 			}
 			break;
 		default:
@@ -324,10 +324,10 @@ graphics_chars:
 			break;
 		switch (reg_bl) {
 		case 0x10:							/* Get EGA Information */
-			reg_bh=(real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS)==0x3B4);	
+			reg_bh=(real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS)==0x3B4);	
 			reg_bl=3;	//256 kb
-			reg_cl=real_readb(BIOSMEM_SEG,BIOSMEM_SWITCHES) & 0x0F;
-			reg_ch=real_readb(BIOSMEM_SEG,BIOSMEM_SWITCHES) >> 4;
+			reg_cl=real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_SWITCHES) & 0x0F;
+			reg_ch=real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_SWITCHES) >> 4;
 			break;
 		case 0x20:							/* Set alternate printscreen */
 			break;
@@ -341,8 +341,8 @@ graphics_chars:
 						break;
 					}
 				}
-				Bit8u modeset_ctl = real_readb(BIOSMEM_SEG,BIOSMEM_MODESET_CTL);
-				Bit8u video_switches = real_readb(BIOSMEM_SEG,BIOSMEM_SWITCHES)&0xf0;
+				Bit8u modeset_ctl = real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_MODESET_CTL);
+				Bit8u video_switches = real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_SWITCHES)&0xf0;
 				switch(reg_al) {
 				case 0: // 200
 					modeset_ctl &= 0xef;
@@ -363,8 +363,8 @@ graphics_chars:
 					video_switches |= 8;	// ega normal/cga emulation
 					break;
 				}
-				real_writeb(BIOSMEM_SEG,BIOSMEM_MODESET_CTL,modeset_ctl);
-				real_writeb(BIOSMEM_SEG,BIOSMEM_SWITCHES,video_switches);
+				real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_MODESET_CTL,modeset_ctl);
+				real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_SWITCHES,video_switches);
 				reg_al=0x12;	// success
 				break;
 			}
@@ -376,9 +376,9 @@ graphics_chars:
 					reg_al=0;		//invalid subfunction
 					break;
 				}
-				Bit8u temp = real_readb(BIOSMEM_SEG,BIOSMEM_MODESET_CTL) & 0xf7;
+				Bit8u temp = real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_MODESET_CTL) & 0xf7;
 				if (reg_al&1) temp|=8;		// enable if al=0
-				real_writeb(BIOSMEM_SEG,BIOSMEM_MODESET_CTL,temp);
+				real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_MODESET_CTL,temp);
 				reg_al=0x12;
 				break;	
 			}		
@@ -397,9 +397,9 @@ graphics_chars:
 					reg_al=0;
 					break;
 				}
-				Bit8u temp = real_readb(BIOSMEM_SEG,BIOSMEM_MODESET_CTL) & 0xfd;
+				Bit8u temp = real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_MODESET_CTL) & 0xfd;
 				if (!(reg_al&1)) temp|=2;		// enable if al=0
-				real_writeb(BIOSMEM_SEG,BIOSMEM_MODESET_CTL,temp);
+				real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_MODESET_CTL,temp);
 				reg_al=0x12;
 				break;	
 			}		
@@ -412,8 +412,8 @@ graphics_chars:
 					reg_al=0;
 					break;
 				}
-				Bit8u temp = real_readb(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL) & 0xfe;
-				real_writeb(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,temp|reg_al);
+				Bit8u temp = real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL) & 0xfe;
+				real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,temp|reg_al);
 				reg_al=0x12;
 				break;	
 			}		
@@ -670,18 +670,18 @@ graphics_chars:
 
 static void INT10_Seg40Init(void) {
 	// Set the default MSR
-	real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x09);
+	real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x09);
 	if (IS_EGAVGA_ARCH) {
 		// Set the default char height
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,16);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,16);
 		// Clear the screen 
-		real_writeb(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,0x60);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,0x60);
 		// Set the basic screen we have
-		real_writeb(BIOSMEM_SEG,BIOSMEM_SWITCHES,0xF9);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_SWITCHES,0xF9);
 		// Set the basic modeset options
-		real_writeb(BIOSMEM_SEG,BIOSMEM_MODESET_CTL,0x51);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_MODESET_CTL,0x51);
 		// Set the pointer to video save pointer table
-		real_writed(BIOSMEM_SEG,BIOSMEM_VS_POINTER,int10.rom.video_save_pointers);
+		real_write<uint32_t>(BIOSMEM_SEG,BIOSMEM_VS_POINTER,int10.rom.video_save_pointers);
 	}
 }
 
@@ -717,7 +717,7 @@ static void SetupTandyBios(void) {
 	if (machine==MCH_TANDY) {
 		Bitu i;
 		for(i=0;i<130;i++) {
-			phys_writeb(0xf0000+i+0xc000, TandyConfig[i]);
+			phys_write<uint8_t>(0xf0000+i+0xc000, TandyConfig[i]);
 		}
 	}
 }

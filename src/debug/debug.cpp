@@ -2023,11 +2023,11 @@ void LogPages(char* selname) {
 			for (int i=0; i<0xfffff; i++) {
 				Bitu table_addr=(paging.base.page<<12)+(i >> 10)*4;
 				X86PageEntry table;
-				table.load=phys_readd(table_addr);
+				table.load=phys_read<uint32_t>(table_addr);
 				if (table.block.p) {
 					X86PageEntry entry;
 					Bitu entry_addr=(table.block.base<<12)+(i & 0x3ff)*4;
-					entry.load=phys_readd(entry_addr);
+					entry.load=phys_read<uint32_t>(entry_addr);
 					if (entry.block.p) {
 						sprintf(out1,"page %05Xxxx -> %04Xxxx  flags [uw] %x:%x::%x:%x [d=%x|a=%x]",
 							i,entry.block.base,entry.block.us,table.block.us,
@@ -2039,11 +2039,11 @@ void LogPages(char* selname) {
 		} else {
 			Bitu table_addr=(paging.base.page<<12)+(sel >> 10)*4;
 			X86PageEntry table;
-			table.load=phys_readd(table_addr);
+			table.load=phys_read<uint32_t>(table_addr);
 			if (table.block.p) {
 				X86PageEntry entry;
 				Bitu entry_addr=(table.block.base<<12)+(sel & 0x3ff)*4;
-				entry.load=phys_readd(entry_addr);
+				entry.load=phys_read<uint32_t>(entry_addr);
 				sprintf(out1,"page %05" sBitfs(X) "xxx -> %04Xxxx  flags [puw] %x:%x::%x:%x::%x:%x",sel,entry.block.base,entry.block.p,table.block.p,entry.block.us,table.block.us,entry.block.wr,table.block.wr);
 				LOG(LOG_MISC,LOG_ERROR)("%s",out1);
 			} else {
@@ -2159,7 +2159,7 @@ public:
 	void Run()
 	{
 		if(cmd->FindExist("/NOMOUSE",false)) {
-	        	real_writed(0,0x33<<2,0);
+	        	real_write<uint32_t>(0,0x33<<2,0);
 			return;
 		}
 

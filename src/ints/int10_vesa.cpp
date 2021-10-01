@@ -109,14 +109,14 @@ Bit8u VESA_GetSVGAInformation(Bit16u seg,Bit16u off) {
 	else mem_writew(buffer+0x04,0x102);						//Vesa version 1.2
 	if (vbe2) {
 		mem_writed(buffer+0x06,RealMake(seg,vbe2_pos));
-		for (i=0;i<sizeof(string_oem);i++) real_writeb(seg,vbe2_pos++,string_oem[i]);
+		for (i=0;i<sizeof(string_oem);i++) real_write<uint8_t>(seg,vbe2_pos++,string_oem[i]);
 		mem_writew(buffer+0x14,0x200);					//VBE 2 software revision
 		mem_writed(buffer+0x16,RealMake(seg,vbe2_pos));
-		for (i=0;i<sizeof(string_vendorname);i++) real_writeb(seg,vbe2_pos++,string_vendorname[i]);
+		for (i=0;i<sizeof(string_vendorname);i++) real_write<uint8_t>(seg,vbe2_pos++,string_vendorname[i]);
 		mem_writed(buffer+0x1a,RealMake(seg,vbe2_pos));
-		for (i=0;i<sizeof(string_productname);i++) real_writeb(seg,vbe2_pos++,string_productname[i]);
+		for (i=0;i<sizeof(string_productname);i++) real_write<uint8_t>(seg,vbe2_pos++,string_productname[i]);
 		mem_writed(buffer+0x1e,RealMake(seg,vbe2_pos));
-		for (i=0;i<sizeof(string_productrev);i++) real_writeb(seg,vbe2_pos++,string_productrev[i]);
+		for (i=0;i<sizeof(string_productrev);i++) real_write<uint8_t>(seg,vbe2_pos++,string_productrev[i]);
 	} else {
 		mem_writed(buffer+0x06,int10.rom.oemstring);	//Oemstring
 	}
@@ -639,18 +639,18 @@ void INT10_SetupVESA(void) {
 		}
 		if (ModeList_VGA[i].mode>=0x100 && canuse_mode) {
 			if (!int10.vesa_oldvbe || ModeList_VGA[i].mode < 0x120) {
-				phys_writew(PhysMake(0xc000, int10.rom.used), ModeList_VGA[i].mode);
+				phys_write<uint16_t>(PhysMake(0xc000, int10.rom.used), ModeList_VGA[i].mode);
 				int10.rom.used += 2;
 			}
 		}
 		i++;
 	}
-	phys_writew(PhysMake(0xc000,int10.rom.used),0xffff);
+	phys_write<uint16_t>(PhysMake(0xc000,int10.rom.used),0xffff);
 	int10.rom.used+=2;
 	int10.rom.oemstring=RealMake(0xc000,int10.rom.used);
 	const auto len = safe_strlen(string_oem) + 1;
 	for (i=0;i<len;i++) {
-		phys_writeb(0xc0000+int10.rom.used++,string_oem[i]);
+		phys_write<uint8_t>(0xc0000+int10.rom.used++,string_oem[i]);
 	}
 	/* Prepare the real mode interface */
 	int10.rom.wait_retrace=RealMake(0xc000,int10.rom.used);
@@ -663,12 +663,12 @@ void INT10_SetupVESA(void) {
 	int10.rom.used += 8;		//Skip the byte later used for offsets
 	/* PM Set Window call */
 	int10.rom.pmode_interface_window = int10.rom.used - RealOff( int10.rom.pmode_interface );
-	phys_writew( Real2Phys(int10.rom.pmode_interface) + 0, int10.rom.pmode_interface_window );
+	phys_write<uint16_t>( Real2Phys(int10.rom.pmode_interface) + 0, int10.rom.pmode_interface_window );
 	callback.pmWindow=CALLBACK_Allocate();
 	int10.rom.used += (Bit16u)CALLBACK_Setup(callback.pmWindow, VESA_PMSetWindow, CB_RETN, PhysMake(0xc000,int10.rom.used), "VESA PM Set Window");
 	/* PM Set start call */
 	int10.rom.pmode_interface_start = int10.rom.used - RealOff( int10.rom.pmode_interface );
-	phys_writew( Real2Phys(int10.rom.pmode_interface) + 2, int10.rom.pmode_interface_start);
+	phys_write<uint16_t>( Real2Phys(int10.rom.pmode_interface) + 2, int10.rom.pmode_interface_start);
 	callback.pmStart=CALLBACK_Allocate();
 	int10.rom.used += (Bit16u)CALLBACK_Setup(callback.pmStart,
 	                                         VESA_PMSetStart, CB_VESA_PM,
@@ -676,11 +676,11 @@ void INT10_SetupVESA(void) {
 	                                         "VESA PM Set Start");
 	/* PM Set Palette call */
 	int10.rom.pmode_interface_palette = int10.rom.used - RealOff( int10.rom.pmode_interface );
-	phys_writew( Real2Phys(int10.rom.pmode_interface) + 4, int10.rom.pmode_interface_palette);
+	phys_write<uint16_t>( Real2Phys(int10.rom.pmode_interface) + 4, int10.rom.pmode_interface_palette);
 	callback.pmPalette=CALLBACK_Allocate();
 	int10.rom.used += (Bit16u)CALLBACK_Setup(0, NULL, CB_VESA_PM, PhysMake(0xc000,int10.rom.used), "");
 	int10.rom.used += (Bit16u)CALLBACK_Setup(callback.pmPalette, VESA_PMSetPalette, CB_RETN, PhysMake(0xc000,int10.rom.used), "VESA PM Set Palette");
 	/* Finalize the size and clear the required ports pointer */
-	phys_writew( Real2Phys(int10.rom.pmode_interface) + 6, 0);
+	phys_write<uint16_t>( Real2Phys(int10.rom.pmode_interface) + 6, 0);
 	int10.rom.pmode_interface_size=int10.rom.used - RealOff( int10.rom.pmode_interface );
 }

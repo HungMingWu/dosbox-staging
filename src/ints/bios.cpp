@@ -116,8 +116,8 @@ static bool Tandy_InitializeTS() {
 
 /* check if Tandy DAC is still playing */
 static bool Tandy_TransferInProgress(void) {
-	if (real_readw(0x40,0xd0)) return true;			/* not yet done */
-	if (real_readb(0x40,0xd4)==0xff) return false;	/* still in init-state */
+	if (real_read<uint16_t>(0x40,0xd0)) return true;			/* not yet done */
+	if (real_read<uint8_t>(0x40,0xd4)==0xff) return false;	/* still in init-state */
 
 	Bit8u tandy_dma = 1;
 	if (tandy_sb.port) tandy_dma = tandy_sb.dma;
@@ -127,7 +127,7 @@ static bool Tandy_TransferInProgress(void) {
 	Bit16u datalen=(Bit8u)(IO_ReadB(tandy_dma*2+1)&0xff);
 	datalen|=(IO_ReadB(tandy_dma*2+1)<<8);
 	if (datalen==0xffff) return false;	/* no DMA transfer */
-	else if ((datalen<0x10) && (real_readb(0x40,0xd4)==0x0f) && (real_readw(0x40,0xd2)==0x1c)) {
+	else if ((datalen<0x10) && (real_read<uint8_t>(0x40,0xd4)==0x0f) && (real_read<uint16_t>(0x40,0xd2)==0x1c)) {
 		/* stop already requested */
 		return false;
 	}
@@ -135,7 +135,7 @@ static bool Tandy_TransferInProgress(void) {
 }
 
 static void Tandy_SetupTransfer(PhysPt bufpt,bool isplayback) {
-	const auto length=real_readw(0x40,0xd0);
+	const auto length=real_read<uint16_t>(0x40,0xd0);
 	if (length==0) return;	/* nothing to do... */
 
 	if ((tandy_sb.port==0) && (tandy_dac.port==0)) return;
@@ -150,7 +150,7 @@ static void Tandy_SetupTransfer(PhysPt bufpt,bool isplayback) {
 	/* revector IRQ-handler if necessary */
 	RealPt current_irq=RealGetVec(tandy_irq_vector);
 	if (current_irq!=tandy_DAC_callback[0]->Get_RealPointer()) {
-		real_writed(0x40,0xd6,current_irq);
+		real_write<uint32_t>(0x40,0xd6,current_irq);
 		RealSetVec(tandy_irq_vector,tandy_DAC_callback[0]->Get_RealPointer());
 	}
 
@@ -181,20 +181,20 @@ static void Tandy_SetupTransfer(PhysPt bufpt,bool isplayback) {
 	case 2: IO_Write(0x81, bufpage); break;
 	case 3: IO_Write(0x82, bufpage); break;
 	}
-	real_writeb(0x40,0xd4,bufpage);
+	real_write<uint8_t>(0x40,0xd4,bufpage);
 
 	/* calculate transfer size (respects segment boundaries) */
 	Bit32u tlength=length;
 	if (tlength+(bufpt&0xffff)>0x10000) tlength=0x10000-(bufpt&0xffff);
-	real_writew(0x40,0xd0,(Bit16u)(length-tlength));	/* remaining buffer length */
+	real_write<uint16_t>(0x40,0xd0,(Bit16u)(length-tlength));	/* remaining buffer length */
 	tlength--;
 
 	/* set transfer size */
 	IO_Write(tandy_dma*2+1,(Bit8u)(tlength&0xff));
 	IO_Write(tandy_dma*2+1,(Bit8u)((tlength>>8)&0xff));
 
-	Bit16u delay=(Bit16u)(real_readw(0x40,0xd2)&0xfff);
-	Bit8u amplitude=(Bit8u)((real_readw(0x40,0xd2)>>13)&0x7);
+	Bit16u delay=(Bit16u)(real_read<uint16_t>(0x40,0xd2)&0xfff);
+	Bit8u amplitude=(Bit8u)((real_read<uint16_t>(0x40,0xd2)>>13)&0x7);
 	if (tandy_sb.port) {
 		IO_Write(0x0a,tandy_dma);	/* enable DMA channel */
 		/* set frequency */
@@ -218,7 +218,7 @@ static void Tandy_SetupTransfer(PhysPt bufpt,bool isplayback) {
 
 	if (!isplayback) {
 		/* mark transfer as recording operation */
-		real_writew(0x40,0xd2,(Bit16u)(delay|0x1000));
+		real_write<uint16_t>(0x40,0xd2,(Bit16u)(delay|0x1000));
 	}
 }
 
@@ -226,7 +226,7 @@ static Bitu IRQ_TandyDAC(void) {
 	if (tandy_dac.port) {
 		IO_Read(tandy_dac.port);
 	}
-	if (real_readw(0x40,0xd0)) {	/* play/record next buffer */
+	if (real_read<uint16_t>(0x40,0xd0)) {	/* play/record next buffer */
 		/* acknowledge IRQ */
 		IO_Write(0x20,0x20);
 		if (tandy_sb.port) {
@@ -234,13 +234,13 @@ static Bitu IRQ_TandyDAC(void) {
 		}
 
 		/* buffer starts at the next page */
-		Bit8u npage=real_readb(0x40,0xd4)+1;
-		real_writeb(0x40,0xd4,npage);
+		Bit8u npage=real_read<uint8_t>(0x40,0xd4)+1;
+		real_write<uint8_t>(0x40,0xd4,npage);
 
-		Bitu rb=real_readb(0x40,0xd3);
+		Bitu rb=real_read<uint8_t>(0x40,0xd3);
 		if (rb&0x10) {
 			/* start recording */
-			real_writeb(0x40,0xd3,rb&0xef);
+			real_write<uint8_t>(0x40,0xd3,rb&0xef);
 			Tandy_SetupTransfer(npage<<16,false);
 		} else {
 			/* start playback */
@@ -254,7 +254,7 @@ static Bitu IRQ_TandyDAC(void) {
 		if (tandy_irq_vector<8) tandy_irq_vector += 8;
 		else tandy_irq_vector += (0x70-8);
 
-		RealSetVec(tandy_irq_vector,real_readd(0x40,0xd6));
+		RealSetVec(tandy_irq_vector,real_read<uint32_t>(0x40,0xd6));
 
 		/* turn off speaker and acknowledge soundblaster IRQ */
 		if (tandy_sb.port) {
@@ -289,9 +289,9 @@ static void TandyDAC_Handler(Bit8u tfunction) {
 			break;
 		}
 		/* store buffer length */
-		real_writew(0x40,0xd0,reg_cx);
+		real_write<uint16_t>(0x40,0xd0,reg_cx);
 		/* store delay and volume */
-		real_writew(0x40,0xd2,(reg_dx&0xfff)|((reg_al&7)<<13));
+		real_write<uint16_t>(0x40,0xd2,(reg_dx&0xfff)|((reg_al&7)<<13));
 		Tandy_SetupTransfer(PhysMake(SegValue(es),reg_bx),reg_ah==0x83);
 		reg_ah=0x00;
 		CALLBACK_SCF(false);
@@ -300,8 +300,8 @@ static void TandyDAC_Handler(Bit8u tfunction) {
 		reg_ah=0x00;
 
 		/* setup for a small buffer with silence */
-		real_writew(0x40,0xd0,0x0a);
-		real_writew(0x40,0xd2,0x1c);
+		real_write<uint16_t>(0x40,0xd0,0x0a);
+		real_write<uint16_t>(0x40,0xd2,0x1c);
 		Tandy_SetupTransfer(PhysMake(0xf000,0xa084),true);
 		CALLBACK_SCF(false);
 		break;
@@ -624,7 +624,7 @@ static Bitu INT14_Handler(void) {
 		return CBRET_NONE;
 	}
 	
-	Bit16u port = real_readw(0x40,reg_dx*2); // DX is always port number
+	Bit16u port = real_read<uint16_t>(0x40,reg_dx*2); // DX is always port number
 	Bit8u timeout = mem_readb(BIOS_COM1_TIMEOUT + reg_dx);
 	if (port==0)	{
 		LOG(LOG_BIOS,LOG_NORMAL)("BIOS INT14: port %d does not exist.",reg_dx);
@@ -1103,10 +1103,10 @@ private:
 public:
 	BIOS(Section* configuration):Module_base(configuration){
 		/* tandy DAC can be requested in tandy_sound.cpp by initializing this field */
-		bool use_tandyDAC=(real_readb(0x40,0xd4)==0xff);
+		bool use_tandyDAC = (real_read<uint8_t>(0x40,0xd4)==0xff);
 
 		/* Clear the Bios Data Area (0x400-0x5ff, 0x600- is accounted to DOS) */
-		for (Bit16u i=0;i<0x200;i++) real_writeb(0x40,i,0);
+		for (Bit16u i=0;i<0x200;i++) real_write<uint8_t>(0x40,i,0);
 
 		/* Setup all the interrupt handlers the bios controls */
 
@@ -1192,14 +1192,14 @@ public:
 		RealSetVec(0x19,rptr);
 
 		// The farjump at the processor reset entry point (jumps to POST routine)
-		phys_writeb(0xFFFF0,0xEA);		// FARJMP
-		phys_writew(0xFFFF1,RealOff(BIOS_DEFAULT_RESET_LOCATION));	// offset
-		phys_writew(0xFFFF3,RealSeg(BIOS_DEFAULT_RESET_LOCATION));	// segment
+		phys_write<uint8_t>(0xFFFF0,0xEA);		// FARJMP
+		phys_write<uint16_t>(0xFFFF1,RealOff(BIOS_DEFAULT_RESET_LOCATION));	// offset
+		phys_write<uint16_t>(0xFFFF3,RealSeg(BIOS_DEFAULT_RESET_LOCATION));	// segment
 
 		// Compatible POST routine location: jump to the callback
-		phys_writeb(Real2Phys(BIOS_DEFAULT_RESET_LOCATION)+0,0xEA);				// FARJMP
-		phys_writew(Real2Phys(BIOS_DEFAULT_RESET_LOCATION)+1,RealOff(rptr));	// offset
-		phys_writew(Real2Phys(BIOS_DEFAULT_RESET_LOCATION)+3,RealSeg(rptr));	// segment
+		phys_write<uint8_t>(Real2Phys(BIOS_DEFAULT_RESET_LOCATION)+0,0xEA);				// FARJMP
+		phys_write<uint16_t>(Real2Phys(BIOS_DEFAULT_RESET_LOCATION)+1,RealOff(rptr));	// offset
+		phys_write<uint16_t>(Real2Phys(BIOS_DEFAULT_RESET_LOCATION)+3,RealSeg(rptr));	// segment
 
 		/* Irq 2 */
 		Bitu call_irq2=CALLBACK_Allocate();	
@@ -1218,33 +1218,33 @@ public:
 
 		// INT 05h: Print Screen
 		// IRQ1 handler calls it when PrtSc key is pressed; does nothing unless hooked
-		phys_writeb(Real2Phys(BIOS_DEFAULT_INT5_LOCATION),0xcf);
+		phys_write<uint8_t>(Real2Phys(BIOS_DEFAULT_INT5_LOCATION),0xcf);
 		RealSetVec(0x05,BIOS_DEFAULT_INT5_LOCATION);
 
 		/* Some hardcoded vectors */
-		phys_writeb(Real2Phys(BIOS_DEFAULT_HANDLER_LOCATION),0xcf);	/* bios default interrupt vector location -> IRET */
-		phys_writew(Real2Phys(RealGetVec(0x12))+0x12,0x20); //Hack for Jurresic
+		phys_write<uint8_t>(Real2Phys(BIOS_DEFAULT_HANDLER_LOCATION),0xcf);	/* bios default interrupt vector location -> IRET */
+		phys_write<uint16_t>(Real2Phys(RealGetVec(0x12))+0x12,0x20); //Hack for Jurresic
 
-		if (machine==MCH_TANDY) phys_writeb(0xffffe,0xff)	;	/* Tandy model */
-		else if (machine==MCH_PCJR) phys_writeb(0xffffe,0xfd);	/* PCJr model */
-		else phys_writeb(0xffffe,0xfc);	/* PC */
+		if (machine==MCH_TANDY) phys_write<uint8_t>(0xffffe,0xff)	;	/* Tandy model */
+		else if (machine==MCH_PCJR) phys_write<uint8_t>(0xffffe,0xfd);	/* PCJr model */
+		else phys_write<uint8_t>(0xffffe,0xfc);	/* PC */
 
 		// System BIOS identification
 		uint16_t i = 0;
 		for (const auto c : "IBM COMPATIBLE 486 BIOS COPYRIGHT The DOSBox Team.")
-			phys_writeb(0xfe00e + i++, static_cast<uint8_t>(c));
+			phys_write<uint8_t>(0xfe00e + i++, static_cast<uint8_t>(c));
 
 		// System BIOS version
 		i = 0;
 		for (const auto c : "DOSBox FakeBIOS v1.0")
-			phys_writeb(0xfe061 + i++, static_cast<uint8_t>(c));
+			phys_write<uint8_t>(0xfe061 + i++, static_cast<uint8_t>(c));
 
 		// write system BIOS date
 		i = 0;
 		for (const auto c : "01/01/92")
-			phys_writeb(0xffff5 + i++, static_cast<uint8_t>(c));
+			phys_write<uint8_t>(0xffff5 + i++, static_cast<uint8_t>(c));
 
-		phys_writeb(0xfffff, 0x55); // signature
+		phys_write<uint8_t>(0xfffff, 0x55); // signature
 
 		tandy_sb.port=0;
 		tandy_dac.port=0;
@@ -1257,10 +1257,10 @@ public:
 				tandy_dac_type = 2;
 			}
 			if (tandy_dac_type) {
-				real_writew(0x40,0xd0,0x0000);
-				real_writew(0x40,0xd2,0x0000);
-				real_writeb(0x40,0xd4,0xff);	/* tandy DAC init value */
-				real_writed(0x40,0xd6,0x00000000);
+				real_write<uint16_t>(0x40,0xd0,0x0000);
+				real_write<uint16_t>(0x40,0xd2,0x0000);
+				real_write<uint8_t>(0x40,0xd4,0xff);	/* tandy DAC init value */
+				real_write<uint32_t>(0x40,0xd6,0x00000000);
 				/* install the DAC callback handler */
 				tandy_DAC_callback[0]=new CALLBACK_HandlerObject();
 				tandy_DAC_callback[1]=new CALLBACK_HandlerObject();
@@ -1284,11 +1284,11 @@ public:
 				else tandy_irq_vector += (0x70-8);
 
 				RealPt current_irq=RealGetVec(tandy_irq_vector);
-				real_writed(0x40,0xd6,current_irq);
+				real_write<uint32_t>(0x40,0xd6,current_irq);
 				for (i = 0; i < 0x10; i++)
-					phys_writeb(PhysMake(0xf000, 0xa084 + i),
+					phys_write<uint8_t>(PhysMake(0xf000, 0xa084 + i),
 					            0x80);
-			} else real_writeb(0x40,0xd4,0x00);
+			} else real_write<uint8_t>(0x40,0xd4,0x00);
 		}
 	
 		/* Setup some stuff in 0x40 bios segment */
@@ -1389,9 +1389,9 @@ public:
 			IO_Write(tandy_sb.port+0xc,0xd3);
 			IO_Write(tandy_sb.port+0xc,0xd0);
 		}
-		real_writeb(0x40,0xd4,0x00);
+		real_write<uint8_t>(0x40,0xd4,0x00);
 		if (tandy_DAC_callback[0]) {
-			Bit32u orig_vector=real_readd(0x40,0xd6);
+			Bit32u orig_vector=real_read<uint32_t>(0x40,0xd6);
 			if (orig_vector==tandy_DAC_callback[0]->Get_RealPointer()) {
 				/* set IRQ vector to old value */
 				Bit8u tandy_irq = 7;
@@ -1401,8 +1401,8 @@ public:
 				if (tandy_irq_vector<8) tandy_irq_vector += 8;
 				else tandy_irq_vector += (0x70-8);
 
-				RealSetVec(tandy_irq_vector,real_readd(0x40,0xd6));
-				real_writed(0x40,0xd6,0x00000000);
+				RealSetVec(tandy_irq_vector,real_read<uint32_t>(0x40,0xd6));
+				real_write<uint32_t>(0x40,0xd6,0x00000000);
 			}
 			delete tandy_DAC_callback[0];
 			delete tandy_DAC_callback[1];

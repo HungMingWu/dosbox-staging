@@ -78,11 +78,11 @@ void LOADROM::Run(void) {
 
         if (rom_base) {
             /* write buffer into ROM */
-            for (Bitu i=0; i<data_read; i++) phys_writeb(rom_base + i, rom_buffer[i]);
+            for (Bitu i=0; i<data_read; i++) phys_write<uint8_t>(rom_base + i, rom_buffer[i]);
 
             if (rom_base == 0xc0000) {
                 /* initialize video BIOS */
-                phys_writeb(PhysMake(0xf000, 0xf065), 0xcf);
+                phys_write<uint8_t>(PhysMake(0xf000, 0xf065), 0xcf);
                 reg_flags &= ~FLAG_IF;
                 CALLBACK_RunRealFar(0xc000, 0x0003);
                 LOG_MSG("Video BIOS ROM loaded and initialized.");

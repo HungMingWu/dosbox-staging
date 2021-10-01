@@ -307,8 +307,8 @@ static Bit8u EMM_MapPage(Bitu phys_page,Bit16u handle,Bit16u log_page) {
 		emm_mappings[phys_page].handle=NULL_HANDLE;
 		emm_mappings[phys_page].page=NULL_PAGE;
 		for (Bitu i=0;i<4;i++)
-			PAGING_MapPage(EMM_PAGEFRAME4K+phys_page*4+i,EMM_PAGEFRAME4K+phys_page*4+i);
-		PAGING_ClearTLB();
+			paging.MapPage(EMM_PAGEFRAME4K+phys_page*4+i,EMM_PAGEFRAME4K+phys_page*4+i);
+		paging.clearTLB();
 		return EMM_NO_ERROR;
 	}
 	/* Check for valid handle */
@@ -321,10 +321,10 @@ static Bit8u EMM_MapPage(Bitu phys_page,Bit16u handle,Bit16u log_page) {
 
 		MemHandle memh=MEM_NextHandleAt(emm_handles[handle].mem,log_page*4);;
 		for (Bitu i=0;i<4;i++) {
-			PAGING_MapPage(EMM_PAGEFRAME4K+phys_page*4+i,memh);
+			paging.MapPage(EMM_PAGEFRAME4K+phys_page*4+i,memh);
 			memh=MEM_NextHandle(memh);
 		}
-		PAGING_ClearTLB();
+		paging.clearTLB();
 		return EMM_NO_ERROR;
 	} else  {
 		/* Illegal logical page it is */
@@ -365,8 +365,8 @@ static Bit8u EMM_MapSegment(Bitu segment,Bit16u handle,Bit16u log_page) {
 				emm_segmentmappings[segment>>10].page=NULL_PAGE;
 			}
 			for (Bitu i=0;i<4;i++)
-				PAGING_MapPage(segment*16/4096+i,segment*16/4096+i);
-			PAGING_ClearTLB();
+				paging.MapPage(segment*16/4096+i,segment*16/4096+i);
+			paging.clearTLB();
 			return EMM_NO_ERROR;
 		}
 		/* Check for valid handle */
@@ -384,10 +384,10 @@ static Bit8u EMM_MapSegment(Bitu segment,Bit16u handle,Bit16u log_page) {
 
 			MemHandle memh=MEM_NextHandleAt(emm_handles[handle].mem,log_page*4);;
 			for (Bitu i=0;i<4;i++) {
-				PAGING_MapPage(segment*16/4096+i,memh);
+				paging.MapPage(segment*16/4096+i,memh);
 				memh=MEM_NextHandle(memh);
 			}
-			PAGING_ClearTLB();
+			paging.clearTLB();
 			return EMM_NO_ERROR;
 		} else  {
 			/* Illegal logical page it is */
@@ -911,14 +911,14 @@ static Bitu INT67_Handler(void) {
 				Bit16u ct;
 				/* Set up page table buffer */
 				for (ct=0; ct<0xff; ct++) {
-					real_writeb(SegValue(es),reg_di+ct*4+0x00,0x67);		// access bits
-					real_writew(SegValue(es),reg_di+ct*4+0x01,ct*0x10);		// mapping
-					real_writeb(SegValue(es),reg_di+ct*4+0x03,0x00);
+					real_write<uint8_t>(SegValue(es),reg_di+ct*4+0x00,0x67);		// access bits
+					real_write<uint16_t>(SegValue(es),reg_di+ct*4+0x01,ct*0x10);		// mapping
+					real_write<uint8_t>(SegValue(es),reg_di+ct*4+0x03,0x00);
 				}
 				for (ct=0xff; ct<0x100; ct++) {
-					real_writeb(SegValue(es),reg_di+ct*4+0x00,0x67);		// access bits
-					real_writew(SegValue(es),reg_di+ct*4+0x01,(ct-0xff)*0x10+0x1100);	// mapping
-					real_writeb(SegValue(es),reg_di+ct*4+0x03,0x00);
+					real_write<uint8_t>(SegValue(es),reg_di+ct*4+0x00,0x67);		// access bits
+					real_write<uint16_t>(SegValue(es),reg_di+ct*4+0x01,(ct-0xff)*0x10+0x1100);	// mapping
+					real_write<uint8_t>(SegValue(es),reg_di+ct*4+0x03,0x00);
 				}
 				/* adjust paging entries for page frame (if mapped) */
 				for (ct=0; ct<4; ct++) {
@@ -926,10 +926,10 @@ static Bitu INT67_Handler(void) {
 					if (handle!=0xffff) {
 						Bit16u memh=(Bit16u)MEM_NextHandleAt(emm_handles[handle].mem,emm_mappings[ct].page*4);
 						Bit16u entry_addr=reg_di+(EMM_PAGEFRAME>>6)+(ct*0x10);
-						real_writew(SegValue(es),entry_addr+0x00+0x01,(memh+0)*0x10);		// mapping of 1/4 of page
-						real_writew(SegValue(es),entry_addr+0x04+0x01,(memh+1)*0x10);		// mapping of 2/4 of page
-						real_writew(SegValue(es),entry_addr+0x08+0x01,(memh+2)*0x10);		// mapping of 3/4 of page
-						real_writew(SegValue(es),entry_addr+0x0c+0x01,(memh+3)*0x10);		// mapping of 4/4 of page
+						real_write<uint16_t>(SegValue(es),entry_addr+0x00+0x01,(memh+0)*0x10);		// mapping of 1/4 of page
+						real_write<uint16_t>(SegValue(es),entry_addr+0x04+0x01,(memh+1)*0x10);		// mapping of 2/4 of page
+						real_write<uint16_t>(SegValue(es),entry_addr+0x08+0x01,(memh+2)*0x10);		// mapping of 3/4 of page
+						real_write<uint16_t>(SegValue(es),entry_addr+0x0c+0x01,(memh+3)*0x10);		// mapping of 4/4 of page
 					}
 				}
 				reg_di+=0x400;		// advance pointer by 0x100*4
@@ -938,14 +938,14 @@ static Bitu INT67_Handler(void) {
 				Bit32u cbseg_low=(CALLBACK_GetBase()&0xffff)<<16;
 				Bit32u cbseg_high=(CALLBACK_GetBase()&0x1f0000)>>16;
 				/* Descriptor 1 (code segment, callback segment) */
-				real_writed(SegValue(ds),reg_si+0x00,0x0000ffff|cbseg_low);
-				real_writed(SegValue(ds),reg_si+0x04,0x00009a00|cbseg_high);
+				real_write<uint32_t>(SegValue(ds),reg_si+0x00,0x0000ffff|cbseg_low);
+				real_write<uint32_t>(SegValue(ds),reg_si+0x04,0x00009a00|cbseg_high);
 				/* Descriptor 2 (data segment, full access) */
-				real_writed(SegValue(ds),reg_si+0x08,0x0000ffff);
-				real_writed(SegValue(ds),reg_si+0x0c,0x00009200);
+				real_write<uint32_t>(SegValue(ds),reg_si+0x08,0x0000ffff);
+				real_write<uint32_t>(SegValue(ds),reg_si+0x0c,0x00009200);
 				/* Descriptor 3 (full access) */
-				real_writed(SegValue(ds),reg_si+0x10,0x0000ffff);
-				real_writed(SegValue(ds),reg_si+0x14,0x00009200);
+				real_write<uint32_t>(SegValue(ds),reg_si+0x10,0x0000ffff);
+				real_write<uint32_t>(SegValue(ds),reg_si+0x14,0x00009200);
 
 				reg_ebx=(vcpi.pm_interface&0xffff);
 				reg_ah=EMM_NO_ERROR;

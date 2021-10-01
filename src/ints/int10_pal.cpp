@@ -24,7 +24,7 @@
 #define ACTL_MAX_REG   0x14
 
 static inline void ResetACTL(void) {
-	IO_Read(real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
+	IO_Read(real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
 }
 
 static inline void WriteTandyACTL(Bit8u creg,Bit8u val) {
@@ -59,7 +59,7 @@ void INT10_SetSinglePaletteRegister(uint8_t reg, uint8_t val)
 				// which entry is used for the requested color.
 				if (reg > 3) break;
 				if (reg != 0) { // 0 is assumed to be at 0
-					Bit8u color_select=real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL);
+					Bit8u color_select=real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL);
 					reg = reg*2+8; // Green Red Brown
 					if (color_select& 0x20) reg++; // Cyan Magenta White
 				}
@@ -162,9 +162,9 @@ void INT10_ToggleBlinkingBit(Bit8u state) {
 		IO_Write(VGAREG_ACTL_ADDRESS,32);		//Enable output and protect palette
 
 		if (state<=1) {
-			Bit8u msrval=real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR)&0xdf;
+			Bit8u msrval=real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR)&0xdf;
 			if (state) msrval|=0x20;
-			real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,msrval);
+			real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,msrval);
 		}
 	} else { // EGA
 		// Usually it reads this from the mode list in ROM
@@ -178,9 +178,9 @@ void INT10_ToggleBlinkingBit(Bit8u state) {
 		IO_Write(VGAREG_ACTL_WRITE_DATA,value);
 		IO_Write(VGAREG_ACTL_ADDRESS,0x20);
 
-		Bit8u msrval=real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR)& ~0x20;
+		Bit8u msrval=real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR)& ~0x20;
 		if (state) msrval|=0x20;
-		real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,msrval);
+		real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,msrval);
 	}
 }
 
@@ -217,7 +217,7 @@ void INT10_GetAllPaletteRegisters(PhysPt data) {
 
 void INT10_SetSingleDACRegister(Bit8u index,Bit8u red,Bit8u green,Bit8u blue) {
 	IO_Write(VGAREG_DAC_WRITE_ADDRESS,(Bit8u)index);
-	if ((real_readb(BIOSMEM_SEG,BIOSMEM_MODESET_CTL)&0x06)==0) {
+	if ((real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_MODESET_CTL)&0x06)==0) {
 		IO_Write(VGAREG_DAC_DATA,red);
 		IO_Write(VGAREG_DAC_DATA,green);
 		IO_Write(VGAREG_DAC_DATA,blue);
@@ -240,7 +240,7 @@ void INT10_GetSingleDACRegister(Bit8u index,Bit8u * red,Bit8u * green,Bit8u * bl
 
 void INT10_SetDACBlock(Bit16u index,Bit16u count,PhysPt data) {
  	IO_Write(VGAREG_DAC_WRITE_ADDRESS,(Bit8u)index);
-	if ((real_readb(BIOSMEM_SEG,BIOSMEM_MODESET_CTL)&0x06)==0) {
+	if ((real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_MODESET_CTL)&0x06)==0) {
 		for (;count>0;count--) {
 			IO_Write(VGAREG_DAC_DATA,mem_readb(data++));
 			IO_Write(VGAREG_DAC_DATA,mem_readb(data++));
@@ -318,9 +318,9 @@ void INT10_GetPelMask(Bit8u & mask) {
 
 void INT10_SetBackgroundBorder(uint8_t val)
 {
-	Bit8u color_select=real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL);
+	Bit8u color_select=real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL);
 	color_select=(color_select & 0xe0) | (val & 0x1f);
-	real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,color_select);
+	real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,color_select);
 
 	switch (machine) {
 	case MCH_CGA:
@@ -382,9 +382,9 @@ void INT10_SetBackgroundBorder(uint8_t val)
 }
 
 void INT10_SetColorSelect(Bit8u val) {
-	Bit8u temp=real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL);
+	Bit8u temp=real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL);
 	temp=(temp & 0xdf) | ((val & 1) ? 0x20 : 0x0);
-	real_writeb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,temp);
+	real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,temp);
 	if (machine == MCH_CGA || machine==MCH_TANDY)
 		IO_Write(0x3d9,temp);
 	else if (machine == MCH_PCJR) {

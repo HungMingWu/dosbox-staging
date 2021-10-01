@@ -300,7 +300,7 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 		/* Convert the header to correct endian, i hope this works */
 		HostPt endian=(HostPt)&head;
 		for (i=0;i<sizeof(EXE_Header)/2;i++) {
-			*((Bit16u *)endian)=host_readw(endian);
+			*((Bit16u *)endian)=host_read<uint16_t>(endian);
 			endian+=2;
 		}
 		if ((head.signature!=MAGIC1) && (head.signature!=MAGIC2)) iscom=true;
@@ -396,7 +396,7 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 		pos=head.reloctable;DOS_SeekFile(fhandle,&pos,0);
 		for (i=0;i<head.relocations;i++) {
 			readsize=4;DOS_ReadFile(fhandle,(Bit8u *)&relocpt,&readsize);
-			relocpt=host_readd((HostPt)&relocpt);		//Endianize
+			relocpt=host_read<uint32_t>((HostPt)&relocpt);		//Endianize
 			PhysPt address=PhysMake(RealSeg(relocpt)+loadseg,RealOff(relocpt));
 			mem_writew(address,mem_readw(address)+relocate);
 		}
@@ -478,7 +478,7 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 
 	if (flags==LOAD) {
 		/* First word on the stack is the value ax should contain on startup */
-		real_writew(RealSeg(sssp-2),RealOff(sssp-2),reg_bx);
+		real_write<uint16_t>(RealSeg(sssp-2),RealOff(sssp-2),reg_bx);
 		/* Write initial CS:IP and SS:SP in param block */
 		block.exec.initsssp = sssp-2;
 		block.exec.initcsip = csip;

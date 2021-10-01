@@ -175,7 +175,7 @@ static Bit32u read_kcl_file(const char* kcl_file_name, const char* layout_id, bo
 		Bit32u cur_pos=(Bit32u)(ftell(tempfile));
 		dr=(Bit32u)fread(rbuf, sizeof(Bit8u), 5, tempfile);
 		if (dr<5) break;
-		Bit16u len=host_readw(&rbuf[0]);
+		Bit16u len=host_read<uint16_t>(&rbuf[0]);
 
 		Bit8u data_len=rbuf[2];
 
@@ -184,7 +184,7 @@ static Bit32u read_kcl_file(const char* kcl_file_name, const char* layout_id, bo
 		// get all language codes for this layout
 		for (Bitu i=0; i<data_len;) {
 			fread(rbuf, sizeof(Bit8u), 2, tempfile);
-			Bit16u lcnum=host_readw(&rbuf[0]);
+			Bit16u lcnum=host_read<uint16_t>(&rbuf[0]);
 			i+=2;
 			Bitu lcpos=0;
 			for (;i<data_len;) {
@@ -226,14 +226,14 @@ static Bit32u read_kcl_data(Bit8u * kcl_data, Bit32u kcl_data_size, const char* 
 	for (;;) {
 		if (dpos+5>kcl_data_size) break;
 		Bit32u cur_pos=dpos;
-		Bit16u len=host_readw(&kcl_data[dpos]);
+		Bit16u len=host_read<uint16_t>(&kcl_data[dpos]);
 		Bit8u data_len=kcl_data[dpos+2];
 		dpos+=5;
 
 		char lng_codes[258];
 		// get all language codes for this layout
 		for (Bitu i=0; i<data_len;) {
-			Bit16u lcnum=host_readw(&kcl_data[dpos-2]);
+			Bit16u lcnum=host_read<uint16_t>(&kcl_data[dpos-2]);
 			i+=2;
 			Bitu lcpos=0;
 			for (;i<data_len;) {
@@ -369,21 +369,21 @@ Bitu keyboard_layout::read_keyboard_file(const char* keyboard_file_name, Bit32s 
 		Bit16u plane_flags;
 
 		// get required-flags (Shift/Alt/Ctrl states, etc.)
-		plane_flags=host_readw(&read_buf[read_buf_pos]);
+		plane_flags=host_read<uint16_t>(&read_buf[read_buf_pos]);
 		read_buf_pos+=2;
 		current_layout_planes[cplane].required_flags=plane_flags;
 		used_lock_modifiers |= (plane_flags&0x70);
 		// get forbidden-flags
-		plane_flags=host_readw(&read_buf[read_buf_pos]);
+		plane_flags=host_read<uint16_t>(&read_buf[read_buf_pos]);
 		read_buf_pos+=2;
 		current_layout_planes[cplane].forbidden_flags=plane_flags;
 
 		// get required-userflags
-		plane_flags=host_readw(&read_buf[read_buf_pos]);
+		plane_flags=host_read<uint16_t>(&read_buf[read_buf_pos]);
 		read_buf_pos+=2;
 		current_layout_planes[cplane].required_userflags=plane_flags;
 		// get forbidden-userflags
-		plane_flags=host_readw(&read_buf[read_buf_pos]);
+		plane_flags=host_read<uint16_t>(&read_buf[read_buf_pos]);
 		read_buf_pos+=2;
 		current_layout_planes[cplane].forbidden_userflags=plane_flags;
 	}
@@ -397,14 +397,14 @@ Bitu keyboard_layout::read_keyboard_file(const char* keyboard_file_name, Bit32s 
 		if ((sub_map!=0) && (specific_layout!=-1)) sub_map=(Bit16u)(specific_layout&0xffff);
 
 		// read codepage of submapping
-		submap_cp=host_readw(&read_buf[start_pos+0x14+sub_map*8]);
+		submap_cp=host_read<uint16_t>(&read_buf[start_pos+0x14+sub_map*8]);
 		if ((submap_cp!=0) && (submap_cp!=requested_codepage) && (specific_layout==-1))
 			continue;		// skip nonfitting submappings
 
 		if (submap_cp==requested_codepage) found_matching_layout=true;
 
 		// get table offset
-		table_offset=host_readw(&read_buf[start_pos+0x18+sub_map*8]);
+		table_offset=host_read<uint16_t>(&read_buf[start_pos+0x18+sub_map*8]);
 		diacritics_entries=0;
 		if (table_offset!=0) {
 			// process table
@@ -420,7 +420,7 @@ Bitu keyboard_layout::read_keyboard_file(const char* keyboard_file_name, Bit32s 
 
 
 		// get table offset
-		table_offset=host_readw(&read_buf[start_pos+0x16+sub_map*8]);
+		table_offset=host_read<uint16_t>(&read_buf[start_pos+0x16+sub_map*8]);
 		if (table_offset==0) continue;	// non-present table
 
 		read_buf_pos=start_pos+table_offset;
@@ -701,7 +701,7 @@ Bit16u keyboard_layout::extract_codepage(const char* keyboard_file_name) {
 		Bit16u submap_cp;
 
 		// read codepage of submapping
-		submap_cp=host_readw(&read_buf[start_pos+0x14+sub_map*8]);
+		submap_cp=host_read<uint16_t>(&read_buf[start_pos+0x14+sub_map*8]);
 
 		if (submap_cp!=0) return submap_cp;
 	}
@@ -885,8 +885,8 @@ Bitu keyboard_layout::read_codepage_file(const char* codepage_file_name, Bit32s 
 	}
 
 
-	start_pos=host_readd(&cpi_buf[0x13]);
-	number_of_codepages=host_readw(&cpi_buf[start_pos]);
+	start_pos=host_read<uint32_t>(&cpi_buf[0x13]);
+	number_of_codepages=host_read<uint16_t>(&cpi_buf[start_pos]);
 	start_pos+=4;
 
 	// search if codepage is provided by file
@@ -894,19 +894,19 @@ Bitu keyboard_layout::read_codepage_file(const char* codepage_file_name, Bit32s 
 		Bit16u device_type, font_codepage, font_type;
 
 		// device type can be display/printer (only the first is supported)
-		device_type=host_readw(&cpi_buf[start_pos+0x04]);
-		font_codepage=host_readw(&cpi_buf[start_pos+0x0e]);
+		device_type=host_read<uint16_t>(&cpi_buf[start_pos+0x04]);
+		font_codepage=host_read<uint16_t>(&cpi_buf[start_pos+0x0e]);
 
 		Bit32u font_data_header_pt;
-		font_data_header_pt=host_readd(&cpi_buf[start_pos+0x16]);
+		font_data_header_pt=host_read<uint32_t>(&cpi_buf[start_pos+0x16]);
 
-		font_type=host_readw(&cpi_buf[font_data_header_pt]);
+		font_type=host_read<uint16_t>(&cpi_buf[font_data_header_pt]);
 
 		if ((device_type==0x0001) && (font_type==0x0001) && (font_codepage==codepage_id)) {
 			// valid/matching codepage found
 
-			const uint16_t number_of_fonts = host_readw(&cpi_buf[font_data_header_pt + 0x02]);
-			// const uint16_t font_data_length = host_readw(&cpi_buf[font_data_header_pt + 0x04]);
+			const uint16_t number_of_fonts = host_read<uint16_t>(&cpi_buf[font_data_header_pt + 0x02]);
+			// const uint16_t font_data_length = host_read<uint16_t>(&cpi_buf[font_data_header_pt + 0x04]);
 
 			bool font_changed=false;
 			Bit32u font_data_start=font_data_header_pt+0x06;
@@ -919,29 +919,29 @@ Bitu keyboard_layout::read_codepage_file(const char* codepage_file_name, Bit32s 
 					// 16x8 font
 					PhysPt font16pt=Real2Phys(int10.rom.font_16);
 					for (Bitu i=0;i<256*16;i++) {
-						phys_writeb(font16pt+i,cpi_buf[font_data_start+i]);
+						phys_write<uint8_t>(font16pt+i,cpi_buf[font_data_start+i]);
 					}
 					// terminate alternate list to prevent loading
-					phys_writeb(Real2Phys(int10.rom.font_16_alternate),0);
+					phys_write<uint8_t>(Real2Phys(int10.rom.font_16_alternate),0);
 					font_changed=true;
 				} else if (font_height==0x0e) {
 					// 14x8 font
 					PhysPt font14pt=Real2Phys(int10.rom.font_14);
 					for (Bitu i=0;i<256*14;i++) {
-						phys_writeb(font14pt+i,cpi_buf[font_data_start+i]);
+						phys_write<uint8_t>(font14pt+i,cpi_buf[font_data_start+i]);
 					}
 					// terminate alternate list to prevent loading
-					phys_writeb(Real2Phys(int10.rom.font_14_alternate),0);
+					phys_write<uint8_t>(Real2Phys(int10.rom.font_14_alternate),0);
 					font_changed=true;
 				} else if (font_height==0x08) {
 					// 8x8 fonts
 					PhysPt font8pt=Real2Phys(int10.rom.font_8_first);
 					for (Bitu i=0;i<128*8;i++) {
-						phys_writeb(font8pt+i,cpi_buf[font_data_start+i]);
+						phys_write<uint8_t>(font8pt+i,cpi_buf[font_data_start+i]);
 					}
 					font8pt=Real2Phys(int10.rom.font_8_second);
 					for (Bitu i=0;i<128*8;i++) {
-						phys_writeb(font8pt+i,cpi_buf[font_data_start+i+128*8]);
+						phys_write<uint8_t>(font8pt+i,cpi_buf[font_data_start+i+128*8]);
 					}
 					font_changed=true;
 				}
@@ -962,7 +962,7 @@ Bitu keyboard_layout::read_codepage_file(const char* codepage_file_name, Bit32s 
 			return KEYB_NOERROR;
 		}
 
-		start_pos=host_readd(&cpi_buf[start_pos]);
+		start_pos=host_read<uint32_t>(&cpi_buf[start_pos]);
 		start_pos+=2;
 	}
 

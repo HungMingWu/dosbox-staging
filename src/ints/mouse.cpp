@@ -238,7 +238,7 @@ void RestoreCursorBackgroundText() {
 	if (mouse.hidden || mouse.inhibit_draw) return;
 
 	if (mouse.background) {
-		WriteChar(mouse.backposx,mouse.backposy,real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE),mouse.backData[0],mouse.backData[1],true);
+		WriteChar(mouse.backposx,mouse.backposy,real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE),mouse.backData[0],mouse.backData[1],true);
 		mouse.background = false;
 	}
 }
@@ -259,7 +259,7 @@ void DrawCursorText() {
 	if (mouse.mode < 2) mouse.backposx >>= 1; 
 
 	//use current page (CV program)
-	Bit8u page = real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE);
+	Bit8u page = real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE);
 	
 	if (mouse.cursorType == 0) {
 		Bit16u result;
@@ -271,10 +271,10 @@ void DrawCursorText() {
 		result = (result & mouse.textAndMask) ^ mouse.textXorMask;
 		WriteChar(mouse.backposx,mouse.backposy,page,(Bit8u)(result&0xFF),(Bit8u)(result>>8),true);
 	} else {
-		Bit16u address=page * real_readw(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE);
-		address += (mouse.backposy * real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS) + mouse.backposx) * 2;
+		Bit16u address=page * real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE);
+		address += (mouse.backposy * real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS) + mouse.backposx) * 2;
 		address /= 2;
-		Bit16u cr = real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
+		Bit16u cr = real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
 		IO_Write(cr    , 0xe);
 		IO_Write(cr + 1, (address>>8) & 0xff);
 		IO_Write(cr    , 0xf);
@@ -386,7 +386,7 @@ void DrawCursor() {
 	// Check video page. Seems to be ignored for text mode. 
 	// hence the text mode handled above this
 	// >>> removed because BIOS page is not actual page in some cases, e.g. QQP games
-//	if (real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE)!=mouse.page) return;
+//	if (real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE)!=mouse.page) return;
 
 // Check if cursor in update region
 /*	if ((POS_X >= mouse.updateRegion_x[0]) && (POS_X <= mouse.updateRegion_x[1]) &&
@@ -480,8 +480,8 @@ void Mouse_CursorMoved(float xrel,float yrel,float x,float y,bool emulate) {
 		mouse.y += dy;
 	} else {
 		if (CurMode->type == M_TEXT) {
-			mouse.x = x*real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8;
-			mouse.y = y*(IS_EGAVGA_ARCH?(real_readb(BIOSMEM_SEG,BIOSMEM_NB_ROWS)+1):25)*8;
+			mouse.x = x*real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8;
+			mouse.y = y*(IS_EGAVGA_ARCH?(real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_NB_ROWS)+1):25)*8;
 		} else if ((mouse.max_x < 2048) || (mouse.max_y < 2048) || (mouse.max_x != mouse.max_y)) {
 			if ((mouse.max_x > 0) && (mouse.max_y > 0)) {
 				mouse.x = x*mouse.max_x;
@@ -636,7 +636,7 @@ void Mouse_AfterNewVideoMode(bool setmode) {
 	case 0x07: {
 		mouse.gran_x = (mode<2)?0xfff0:0xfff8;
 		mouse.gran_y = (Bit16s)0xfff8;
-		Bitu rows = IS_EGAVGA_ARCH?real_readb(BIOSMEM_SEG,BIOSMEM_NB_ROWS):24;
+		Bitu rows = IS_EGAVGA_ARCH?real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_NB_ROWS):24;
 		if ((rows == 0) || (rows > 250)) rows = 25 - 1;
 		mouse.max_y = 8*(rows+1) - 1;
 		break;
@@ -991,17 +991,17 @@ static Bitu INT33_Handler(void) {
 
 static Bitu MOUSE_BD_Handler(void) {
 	// the stack contains offsets to register values
-	Bit16u raxpt=real_readw(SegValue(ss),reg_sp+0x0a);
-	Bit16u rbxpt=real_readw(SegValue(ss),reg_sp+0x08);
-	Bit16u rcxpt=real_readw(SegValue(ss),reg_sp+0x06);
-	Bit16u rdxpt=real_readw(SegValue(ss),reg_sp+0x04);
+	Bit16u raxpt=real_read<uint16_t>(SegValue(ss),reg_sp+0x0a);
+	Bit16u rbxpt=real_read<uint16_t>(SegValue(ss),reg_sp+0x08);
+	Bit16u rcxpt=real_read<uint16_t>(SegValue(ss),reg_sp+0x06);
+	Bit16u rdxpt=real_read<uint16_t>(SegValue(ss),reg_sp+0x04);
 
 	// read out the actual values, registers ARE overwritten
-	Bit16u rax=real_readw(SegValue(ds),raxpt);
+	Bit16u rax=real_read<uint16_t>(SegValue(ds),raxpt);
 	reg_ax=rax;
-	reg_bx=real_readw(SegValue(ds),rbxpt);
-	reg_cx=real_readw(SegValue(ds),rcxpt);
-	reg_dx=real_readw(SegValue(ds),rdxpt);
+	reg_bx=real_read<uint16_t>(SegValue(ds),rbxpt);
+	reg_cx=real_read<uint16_t>(SegValue(ds),rcxpt);
+	reg_dx=real_read<uint16_t>(SegValue(ds),rdxpt);
 //	LOG_MSG("MOUSE BD: %04X %X %X %X %d %d",reg_ax,reg_bx,reg_cx,reg_dx,POS_X,POS_Y);
 	
 	// some functions are treated in a special way (additional registers)
@@ -1017,10 +1017,10 @@ static Bitu MOUSE_BD_Handler(void) {
 			else SegSet16(es,SegValue(ds));
 			break;
 		case 0x10:	/* Define screen region for updating */
-			reg_cx=real_readw(SegValue(ds),rdxpt);
-			reg_dx=real_readw(SegValue(ds),rdxpt+2);
-			reg_si=real_readw(SegValue(ds),rdxpt+4);
-			reg_di=real_readw(SegValue(ds),rdxpt+6);
+			reg_cx=real_read<uint16_t>(SegValue(ds),rdxpt);
+			reg_dx=real_read<uint16_t>(SegValue(ds),rdxpt+2);
+			reg_si=real_read<uint16_t>(SegValue(ds),rdxpt+4);
+			reg_di=real_read<uint16_t>(SegValue(ds),rdxpt+6);
 			break;
 		default:
 			break;
@@ -1029,16 +1029,16 @@ static Bitu MOUSE_BD_Handler(void) {
 	INT33_Handler();
 
 	// save back the registers, too
-	real_writew(SegValue(ds),raxpt,reg_ax);
-	real_writew(SegValue(ds),rbxpt,reg_bx);
-	real_writew(SegValue(ds),rcxpt,reg_cx);
-	real_writew(SegValue(ds),rdxpt,reg_dx);
+	real_write<uint16_t>(SegValue(ds),raxpt,reg_ax);
+	real_write<uint16_t>(SegValue(ds),rbxpt,reg_bx);
+	real_write<uint16_t>(SegValue(ds),rcxpt,reg_cx);
+	real_write<uint16_t>(SegValue(ds),rdxpt,reg_dx);
 	switch (rax) {
 		case 0x1f:	/* Disable Mousedriver */
-			real_writew(SegValue(ds),rbxpt,SegValue(es));
+			real_write<uint16_t>(SegValue(ds),rbxpt,SegValue(es));
 			break;
 		case 0x14: /* Exchange event-handler */ 
-			real_writew(SegValue(ds),rcxpt,SegValue(es));
+			real_write<uint16_t>(SegValue(ds),rcxpt,SegValue(es));
 			break;
 		default:
 			break;
@@ -1106,7 +1106,7 @@ void MOUSE_Init(Section* /*sec*/) {
 	RealPt i33loc=RealMake(DOS_GetMemory(0x1)-1,0x10);
 	CALLBACK_Setup(call_int33,&INT33_Handler,CB_MOUSE,Real2Phys(i33loc),"Mouse");
 	// Wasteland needs low(seg(int33))!=0 and low(ofs(int33))!=0
-	real_writed(0,0x33<<2,i33loc);
+	real_write<uint32_t>(0,0x33<<2,i33loc);
 
 	call_mouse_bd=CALLBACK_Allocate();
 	CALLBACK_Setup(call_mouse_bd,&MOUSE_BD_Handler,CB_RETF8,

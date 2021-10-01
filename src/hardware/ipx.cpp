@@ -105,9 +105,9 @@ ECBClass::ECBClass(uint16_t segment, uint16_t offset)
 
 	LOG_IPX("ECB: SN%7d created.   Number of ECBs: %3d, ESR %4x:%4x, ECB %4x:%4x",
 		SerialNumber,ECBAmount,
-		real_readw(RealSeg(ECBAddr),
+		real_read<uint16_t>(RealSeg(ECBAddr),
 		RealOff(ECBAddr)+6),
-		real_readw(RealSeg(ECBAddr),
+		real_read<uint16_t>(RealSeg(ECBAddr),
 		RealOff(ECBAddr)+4),segment,offset);
 #endif
 	
@@ -145,7 +145,7 @@ bool ECBClass::writeData() {
 	for(Bitu i = 0;i < fragCount;i++) {
 		getFragDesc(i,&tmpFrag);
 		for(Bitu t = 0;t < tmpFrag.size;t++) {
-			real_writeb(tmpFrag.segment, tmpFrag.offset + t, buffer[bufoffset]);
+			real_write<uint8_t>(tmpFrag.segment, tmpFrag.offset + t, buffer[bufoffset]);
 			bufoffset++;
 			if(bufoffset >= length) {
 				setCompletionFlag(COMP_SUCCESS);
@@ -162,44 +162,44 @@ bool ECBClass::writeData() {
 }
 
 Bit16u ECBClass::getSocket(void) {
-	return swapByte(real_readw(RealSeg(ECBAddr), RealOff(ECBAddr) + 0xa));
+	return swapByte(real_read<uint16_t>(RealSeg(ECBAddr), RealOff(ECBAddr) + 0xa));
 }
 
 Bit8u ECBClass::getInUseFlag(void) {
-	return real_readb(RealSeg(ECBAddr), RealOff(ECBAddr) + 0x8);
+	return real_read<uint8_t>(RealSeg(ECBAddr), RealOff(ECBAddr) + 0x8);
 }
 
 void ECBClass::setInUseFlag(Bit8u flagval) {
 	iuflag = flagval;
-	real_writeb(RealSeg(ECBAddr), RealOff(ECBAddr) + 0x8, flagval);
+	real_write<uint8_t>(RealSeg(ECBAddr), RealOff(ECBAddr) + 0x8, flagval);
 }
 
 void ECBClass::setCompletionFlag(Bit8u flagval) {
-	real_writeb(RealSeg(ECBAddr), RealOff(ECBAddr) + 0x9, flagval);
+	real_write<uint8_t>(RealSeg(ECBAddr), RealOff(ECBAddr) + 0x9, flagval);
 }
 
 Bit16u ECBClass::getFragCount(void) {
-	return real_readw(RealSeg(ECBAddr), RealOff(ECBAddr) + 34);
+	return real_read<uint16_t>(RealSeg(ECBAddr), RealOff(ECBAddr) + 34);
 }
 
 void ECBClass::getFragDesc(Bit16u descNum, fragmentDescriptor *fragDesc) {
 	Bit16u memoff = RealOff(ECBAddr) + 30 + ((descNum+1) * 6);
-	fragDesc->offset = real_readw(RealSeg(ECBAddr), memoff);
+	fragDesc->offset = real_read<uint16_t>(RealSeg(ECBAddr), memoff);
 	memoff += 2;
-	fragDesc->segment = real_readw(RealSeg(ECBAddr), memoff);
+	fragDesc->segment = real_read<uint16_t>(RealSeg(ECBAddr), memoff);
 	memoff += 2;
-	fragDesc->size = real_readw(RealSeg(ECBAddr), memoff);
+	fragDesc->size = real_read<uint16_t>(RealSeg(ECBAddr), memoff);
 }
 
 RealPt ECBClass::getESRAddr(void) {
-	return RealMake(real_readw(RealSeg(ECBAddr),
+	return RealMake(real_read<uint16_t>(RealSeg(ECBAddr),
 		RealOff(ECBAddr)+6),
-		real_readw(RealSeg(ECBAddr),
+		real_read<uint16_t>(RealSeg(ECBAddr),
 		RealOff(ECBAddr)+4));
 }
 
 void ECBClass::NotifyESR(void) {
-	Bit32u ESRval = real_readd(RealSeg(ECBAddr), RealOff(ECBAddr)+4);
+	Bit32u ESRval = real_read<uint32_t>(RealSeg(ECBAddr), RealOff(ECBAddr)+4);
 	if(ESRval || databuffer) { // databuffer: write data at realmode/v86 time
 		// LOG_IPX("ECB: SN%7d to be notified.", SerialNumber);
 		// take the ECB out of the current list
@@ -234,12 +234,12 @@ void ECBClass::NotifyESR(void) {
 
 void ECBClass::setImmAddress(Bit8u *immAddr) {
 	for(Bitu i=0;i<6;i++)
-		real_writeb(RealSeg(ECBAddr), RealOff(ECBAddr)+28+i, immAddr[i]);
+		real_write<uint8_t>(RealSeg(ECBAddr), RealOff(ECBAddr)+28+i, immAddr[i]);
 }
 
 void ECBClass::getImmAddress(Bit8u* immAddr) {
 	for(Bitu i=0;i<6;i++)
-		immAddr[i] = real_readb(RealSeg(ECBAddr), RealOff(ECBAddr)+28+i);
+		immAddr[i] = real_read<uint8_t>(RealSeg(ECBAddr), RealOff(ECBAddr)+28+i);
 }
 
 ECBClass::~ECBClass() {
@@ -384,8 +384,8 @@ static void handleIpxRequest(void) {
 	             // Currently no support for multiple networks
 
 		for (Bitu i = 0; i < 6; i++)
-			real_writeb(SegValue(es), reg_di + i,
-			            real_readb(SegValue(es), reg_si + i + 4));
+			real_write<uint8_t>(SegValue(es), reg_di + i,
+			            real_read<uint8_t>(SegValue(es), reg_si + i + 4));
 
 		reg_cx = 1;    // time ticks expected
 		reg_al = 0x00; // success
@@ -471,7 +471,7 @@ static void handleIpxRequest(void) {
 
 		Bit8u *addrptr = (Bit8u *)&localIpxAddr;
 		for (Bit16u i = 0; i < 10; i++)
-			real_writeb(SegValue(es), reg_si + i, addrptr[i]);
+			real_write<uint8_t>(SegValue(es), reg_si + i, addrptr[i]);
 	} break;
 
 	case 0x000a: // Relinquish control
@@ -647,22 +647,22 @@ static void sendPacket(ECBClass* sendecb) {
 			// source netnum
 			addrptr = (Bit8u *)&localIpxAddr.netnum;
 			for(Bit16u m=0;m<4;m++) {
-				real_writeb(tmpFrag.segment,tmpFrag.offset+m+18,addrptr[m]);
+				real_write<uint8_t>(tmpFrag.segment,tmpFrag.offset+m+18,addrptr[m]);
 			}
 			// source node number
 			addrptr = (Bit8u *)&localIpxAddr.netnode;
 			for(Bit16u m=0;m<6;m++) {
-				real_writeb(tmpFrag.segment,tmpFrag.offset+m+22,addrptr[m]);
+				real_write<uint8_t>(tmpFrag.segment,tmpFrag.offset+m+22,addrptr[m]);
 			}
 			// Source socket
-			real_writew(tmpFrag.segment,tmpFrag.offset+28, swapByte(sendecb->getSocket()));
+			real_write<uint16_t>(tmpFrag.segment,tmpFrag.offset+28, swapByte(sendecb->getSocket()));
 			
 			// blank checksum
-			real_writew(tmpFrag.segment,tmpFrag.offset, 0xffff);
+			real_write<uint16_t>(tmpFrag.segment,tmpFrag.offset, 0xffff);
 		}
 
 		for(t=0;t<tmpFrag.size;t++) {
-			outbuffer[packetsize] = real_readb(tmpFrag.segment, tmpFrag.offset + t);
+			outbuffer[packetsize] = real_read<uint8_t>(tmpFrag.segment, tmpFrag.offset + t);
 			packetsize++;
 			if(packetsize>=IPXBUFFERSIZE) {
 				LOG_MSG("IPX: Packet size to be sent greater than %d bytes.", IPXBUFFERSIZE);
@@ -683,7 +683,7 @@ static void sendPacket(ECBClass* sendecb) {
 	//wordptr[14] = swapByte(sendecb->getSocket());
 	
 	sendecb->getFragDesc(0,&tmpFrag);
-	real_writew(tmpFrag.segment,tmpFrag.offset+2, swapByte(packetsize));
+	real_write<uint16_t>(tmpFrag.segment,tmpFrag.offset+2, swapByte(packetsize));
 	
 
 	Bit8u immedAddr[6];
@@ -1135,29 +1135,29 @@ public:
 		LOG_IPX("ESR callback address: %x, HandlerID %d", phyDospage,call_ipxesr1);
 
 		//save registers
-		phys_writeb(phyDospage+0,(Bit8u)0xFA);    // CLI
-		phys_writeb(phyDospage+1,(Bit8u)0x60);    // PUSHA
-		phys_writeb(phyDospage+2,(Bit8u)0x1E);    // PUSH DS
-		phys_writeb(phyDospage+3,(Bit8u)0x06);    // PUSH ES
-		phys_writew(phyDospage+4,(Bit16u)0xA00F); // PUSH FS
-		phys_writew(phyDospage+6,(Bit16u)0xA80F); // PUSH GS
+		phys_write<uint8_t>(phyDospage+0,(Bit8u)0xFA);    // CLI
+		phys_write<uint8_t>(phyDospage+1,(Bit8u)0x60);    // PUSHA
+		phys_write<uint8_t>(phyDospage+2,(Bit8u)0x1E);    // PUSH DS
+		phys_write<uint8_t>(phyDospage+3,(Bit8u)0x06);    // PUSH ES
+		phys_write<uint16_t>(phyDospage+4,(Bit16u)0xA00F); // PUSH FS
+		phys_write<uint16_t>(phyDospage+6,(Bit16u)0xA80F); // PUSH GS
 
 		// callback
-		phys_writeb(phyDospage+8,(Bit8u)0xFE);  // GRP 4
-		phys_writeb(phyDospage+9,(Bit8u)0x38);  // Extra Callback instruction
-		phys_writew(phyDospage+10,call_ipxesr1);        // Callback identifier
+		phys_write<uint8_t>(phyDospage+8,(Bit8u)0xFE);  // GRP 4
+		phys_write<uint8_t>(phyDospage+9,(Bit8u)0x38);  // Extra Callback instruction
+		phys_write<uint16_t>(phyDospage+10,call_ipxesr1);        // Callback identifier
 
 		// register recreation
-		phys_writew(phyDospage+12,(Bit16u)0xA90F); // POP GS
-		phys_writew(phyDospage+14,(Bit16u)0xA10F); // POP FS
-		phys_writeb(phyDospage+16,(Bit8u)0x07);    // POP ES
-		phys_writeb(phyDospage+17,(Bit8u)0x1F);    // POP DS
-		phys_writeb(phyDospage+18,(Bit8u)0x61);    // POPA
-		phys_writeb(phyDospage+19,(Bit8u)0xCF);    // IRET: restores flags, CS, IP
+		phys_write<uint16_t>(phyDospage+12,(Bit16u)0xA90F); // POP GS
+		phys_write<uint16_t>(phyDospage+14,(Bit16u)0xA10F); // POP FS
+		phys_write<uint8_t>(phyDospage+16,(Bit8u)0x07);    // POP ES
+		phys_write<uint8_t>(phyDospage+17,(Bit8u)0x1F);    // POP DS
+		phys_write<uint8_t>(phyDospage+18,(Bit8u)0x61);    // POPA
+		phys_write<uint8_t>(phyDospage+19,(Bit8u)0xCF);    // IRET: restores flags, CS, IP
 
 		// IPX version 2.12
-		//phys_writeb(phyDospage+27,(Bit8u)0x2);
-		//phys_writeb(phyDospage+28,(Bit8u)0x12);
+		//phys_write<uint8_t>(phyDospage+27,(Bit8u)0x2);
+		//phys_write<uint8_t>(phyDospage+28,(Bit8u)0x12);
 		//IPXVERpointer = RealMake(dospage,27);
 
 		RealPt ESRRoutineBase = RealMake(dospage, 0);
@@ -1186,7 +1186,7 @@ public:
    
 		PhysPt phyDospage = PhysMake(dospage,0);
 		for(Bitu i = 0;i < 32;i++)
-			phys_writeb(phyDospage+i,(Bit8u)0x00);
+			phys_write<uint8_t>(phyDospage+i,(Bit8u)0x00);
 
 		VFILE_Remove("IPXNET.COM");
 	}

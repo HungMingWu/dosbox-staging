@@ -83,22 +83,22 @@ void DOS_SetupTables(void) {
 
 	/* Some weird files >20 detection routine */
 	/* Possibly obselete when SFT is properly handled */
-	real_writed(DOS_CONSTRING_SEG,0x0a,0x204e4f43);
-	real_writed(DOS_CONSTRING_SEG,0x1a,0x204e4f43);
-	real_writed(DOS_CONSTRING_SEG,0x2a,0x204e4f43);
+	real_write<uint32_t>(DOS_CONSTRING_SEG,0x0a,0x204e4f43);
+	real_write<uint32_t>(DOS_CONSTRING_SEG,0x1a,0x204e4f43);
+	real_write<uint32_t>(DOS_CONSTRING_SEG,0x2a,0x204e4f43);
 
 	/* create a CON device driver */
 	seg=DOS_CONDRV_SEG;
- 	real_writed(seg,0x00,0xffffffff);	// next ptr
- 	real_writew(seg,0x04,0x8013);		// attributes
-  	real_writed(seg,0x06,0xffffffff);	// strategy routine
-  	real_writed(seg,0x0a,0x204e4f43);	// driver name
-  	real_writed(seg,0x0e,0x20202020);	// driver name
+ 	real_write<uint32_t>(seg,0x00,0xffffffff);	// next ptr
+ 	real_write<uint16_t>(seg,0x04,0x8013);		// attributes
+  	real_write<uint32_t>(seg,0x06,0xffffffff);	// strategy routine
+  	real_write<uint32_t>(seg,0x0a,0x204e4f43);	// driver name
+  	real_write<uint32_t>(seg,0x0e,0x20202020);	// driver name
 	dos_infoblock.SetDeviceChainStart(RealMake(seg,0));
    
 	/* Create a fake Current Directory Structure */
 	seg=DOS_CDS_SEG;
-	real_writed(seg,0x00,0x005c3a43);
+	real_write<uint32_t>(seg,0x00,0x005c3a43);
 	dos_infoblock.SetCurDirStruct(RealMake(seg,0));
 
 
@@ -143,28 +143,28 @@ void DOS_SetupTables(void) {
 
 	/* Create a fake FCB SFT */
 	seg=DOS_GetMemory(4);
-	real_writed(seg,0,0xffffffff);		//Last File Table
-	real_writew(seg,4,100);				//File Table supports 100 files
+	real_write<uint32_t>(seg,0,0xffffffff);		//Last File Table
+	real_write<uint16_t>(seg,4,100);				//File Table supports 100 files
 	dos_infoblock.SetFCBTable(RealMake(seg,0));
 
 	/* Create a fake DPB */
 	dos.tables.dpb=DOS_GetMemory(16);
 	dos.tables.mediaid=RealMake(dos.tables.dpb,0x17);	//Media ID offset in DPB
 	for (i=0;i<DOS_DRIVES;i++) {
-		real_writeb(dos.tables.dpb,i*9,i);				// drive number
-		real_writeb(dos.tables.dpb,i*9+1,i);			// unit number
-		real_writew(dos.tables.dpb,i*9+2,0x0200);		// bytes per sector
+		real_write<uint8_t>(dos.tables.dpb,i*9,i);				// drive number
+		real_write<uint8_t>(dos.tables.dpb,i*9+1,i);			// unit number
+		real_write<uint16_t>(dos.tables.dpb,i*9+2,0x0200);		// bytes per sector
 		mem_writew(Real2Phys(dos.tables.mediaid)+i*9,0);
 	}
 
 	/* Create a fake disk buffer head */
 	seg=DOS_GetMemory(6);
-	for (Bitu ct=0; ct<0x20; ct++) real_writeb(seg,ct,0);
-	real_writew(seg,0x00,0xffff);		// forward ptr
-	real_writew(seg,0x02,0xffff);		// backward ptr
-	real_writeb(seg,0x04,0xff);			// not in use
-	real_writeb(seg,0x0a,0x01);			// number of FATs
-	real_writed(seg,0x0d,0xffffffff);	// pointer to DPB
+	for (Bitu ct=0; ct<0x20; ct++) real_write<uint8_t>(seg,ct,0);
+	real_write<uint16_t>(seg,0x00,0xffff);		// forward ptr
+	real_write<uint16_t>(seg,0x02,0xffff);		// backward ptr
+	real_write<uint8_t>(seg,0x04,0xff);			// not in use
+	real_write<uint8_t>(seg,0x0a,0x01);			// number of FATs
+	real_write<uint32_t>(seg,0x0d,0xffffffff);	// pointer to DPB
 	dos_infoblock.SetDiskBufferHeadPt(RealMake(seg,0));
 
 	/* Set buffers to a nice value */
@@ -174,6 +174,6 @@ void DOS_SetupTables(void) {
 	call_casemap = CALLBACK_Allocate();
 	CALLBACK_Setup(call_casemap,DOS_CaseMapFunc,CB_RETF,"DOS CaseMap");
 	/* Add it to country structure */
-	host_writed(country_info + 0x12, CALLBACK_RealPointer(call_casemap));
+	host_write<uint32_t>(country_info + 0x12, CALLBACK_RealPointer(call_casemap));
 	dos.tables.country=country_info;
 }

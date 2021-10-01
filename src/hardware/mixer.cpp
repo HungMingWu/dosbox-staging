@@ -473,11 +473,11 @@ void MixerChannel::AddSamples(Bitu len, const Type* data) {
 							next_sample[1]=data[pos*2+1];
 						} else {
 							if ( sizeof( Type) == 2) {
-								next_sample[0]=(Bit16s)host_readw((HostPt)&data[pos*2+0]);
-								next_sample[1]=(Bit16s)host_readw((HostPt)&data[pos*2+1]);
+								next_sample[0]=(Bit16s)host_read<uint16_t>((HostPt)&data[pos*2+0]);
+								next_sample[1]=(Bit16s)host_read<uint16_t>((HostPt)&data[pos*2+1]);
 							} else {
-								next_sample[0]=(Bit32s)host_readd((HostPt)&data[pos*2+0]);
-								next_sample[1]=(Bit32s)host_readd((HostPt)&data[pos*2+1]);
+								next_sample[0]=(Bit32s)host_read<uint32_t>((HostPt)&data[pos*2+0]);
+								next_sample[1]=(Bit32s)host_read<uint32_t>((HostPt)&data[pos*2+1]);
 							}
 						}
 					} else {
@@ -485,9 +485,9 @@ void MixerChannel::AddSamples(Bitu len, const Type* data) {
 							next_sample[0] = data[pos];
 						} else {
 							if ( sizeof( Type) == 2) {
-								next_sample[0]=(Bit16s)host_readw((HostPt)&data[pos]);
+								next_sample[0]=(Bit16s)host_read<uint16_t>((HostPt)&data[pos]);
 							} else {
-								next_sample[0]=(Bit32s)host_readd((HostPt)&data[pos]);
+								next_sample[0]=(Bit32s)host_read<uint32_t>((HostPt)&data[pos]);
 							}
 						}
 					}
@@ -498,11 +498,11 @@ void MixerChannel::AddSamples(Bitu len, const Type* data) {
 							next_sample[1]=(Bits)data[pos*2+1]-32768;
 						} else {
 							if ( sizeof( Type) == 2) {
-								next_sample[0]=(Bits)host_readw((HostPt)&data[pos*2+0])-32768;
-								next_sample[1]=(Bits)host_readw((HostPt)&data[pos*2+1])-32768;
+								next_sample[0]=(Bits)host_read<uint16_t>((HostPt)&data[pos*2+0])-32768;
+								next_sample[1]=(Bits)host_read<uint16_t>((HostPt)&data[pos*2+1])-32768;
 							} else {
-								next_sample[0]=(Bits)host_readd((HostPt)&data[pos*2+0])-32768;
-								next_sample[1]=(Bits)host_readd((HostPt)&data[pos*2+1])-32768;
+								next_sample[0]=(Bits)host_read<uint32_t>((HostPt)&data[pos*2+0])-32768;
+								next_sample[1]=(Bits)host_read<uint32_t>((HostPt)&data[pos*2+1])-32768;
 							}
 						}
 					} else {
@@ -510,9 +510,9 @@ void MixerChannel::AddSamples(Bitu len, const Type* data) {
 							next_sample[0]=(Bits)data[pos]-32768;
 						} else {
 							if ( sizeof( Type) == 2) {
-								next_sample[0]=(Bits)host_readw((HostPt)&data[pos])-32768;
+								next_sample[0]=(Bits)host_read<uint16_t>((HostPt)&data[pos])-32768;
 							} else {
-								next_sample[0]=(Bits)host_readd((HostPt)&data[pos])-32768;
+								next_sample[0]=(Bits)host_read<uint32_t>((HostPt)&data[pos])-32768;
 							}
 						}
 					}

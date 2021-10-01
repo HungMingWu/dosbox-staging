@@ -343,28 +343,28 @@ int CMscdex::AddDrive(Bit16u _drive, char* physicalPath, Bit8u& subUnit)
 		while(start != 0xFFFFFFFF) {
 			segm  = (Bit16u)(start>>16);
 			offm  = (Bit16u)(start&0xFFFF);
-			start = real_readd(segm,offm);
+			start = real_read<uint32_t>(segm,offm);
 		}
-		real_writed(segm,offm,seg<<16);
+		real_write<uint32_t>(segm,offm,seg<<16);
 
 		// Create Callback Strategy
 		Bit16u off = sizeof(DOS_DeviceHeader::sDeviceHeader);
 		Bit16u call_strategy=(Bit16u)CALLBACK_Allocate();
 		CallBack_Handlers[call_strategy]=MSCDEX_Strategy_Handler;
-		real_writeb(seg,off+0,(Bit8u)0xFE);		//GRP 4
-		real_writeb(seg,off+1,(Bit8u)0x38);		//Extra Callback instruction
-		real_writew(seg,off+2,call_strategy);	//The immediate word
-		real_writeb(seg,off+4,(Bit8u)0xCB);		//A RETF Instruction
+		real_write<uint8_t>(seg,off+0,(Bit8u)0xFE);		//GRP 4
+		real_write<uint8_t>(seg,off+1,(Bit8u)0x38);		//Extra Callback instruction
+		real_write<uint16_t>(seg,off+2,call_strategy);	//The immediate word
+		real_write<uint8_t>(seg,off+4,(Bit8u)0xCB);		//A RETF Instruction
 		devHeader.SetStrategy(off);
 		
 		// Create Callback Interrupt
 		off += 5;
 		Bit16u call_interrupt=(Bit16u)CALLBACK_Allocate();
 		CallBack_Handlers[call_interrupt]=MSCDEX_Interrupt_Handler;
-		real_writeb(seg,off+0,(Bit8u)0xFE);		//GRP 4
-		real_writeb(seg,off+1,(Bit8u)0x38);		//Extra Callback instruction
-		real_writew(seg,off+2,call_interrupt);	//The immediate word
-		real_writeb(seg,off+4,(Bit8u)0xCB);		//A RETF Instruction
+		real_write<uint8_t>(seg,off+0,(Bit8u)0xFE);		//GRP 4
+		real_write<uint8_t>(seg,off+1,(Bit8u)0x38);		//Extra Callback instruction
+		real_write<uint16_t>(seg,off+2,call_interrupt);	//The immediate word
+		real_write<uint8_t>(seg,off+4,(Bit8u)0xCB);		//A RETF Instruction
 		devHeader.SetInterrupt(off);
 		
 		rootDriverHeaderSeg = seg;

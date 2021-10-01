@@ -86,7 +86,7 @@ void MOUNT::ListMounts()
 	const std::string header_type = MSG_Get("PROGRAM_MOUNT_STATUS_TYPE");
 	const std::string header_label = MSG_Get("PROGRAM_MOUNT_STATUS_LABEL");
 
-	const int term_width = real_readw(BIOSMEM_SEG, BIOSMEM_NB_COLS);
+	const int term_width = real_read<uint16_t>(BIOSMEM_SEG, BIOSMEM_NB_COLS);
 	const auto width_1 = static_cast<int>(header_drive.size());
 	const auto width_3 = std::max(11, static_cast<int>(header_label.size()));
 	const auto width_2 = term_width - 3 - width_1 - width_3;

@@ -73,17 +73,17 @@ void INT10_DisplayCombinationCode(Bit16u * dcc,bool set) {
 	Bit8u index=0xff;
 	Bit16u dccentry=0xffff;
 	// walk the tables...
-	RealPt vsavept=real_readd(BIOSMEM_SEG,BIOSMEM_VS_POINTER);
-	RealPt svstable=real_readd(RealSeg(vsavept),RealOff(vsavept)+0x10);
+	RealPt vsavept=real_read<uint32_t>(BIOSMEM_SEG,BIOSMEM_VS_POINTER);
+	RealPt svstable=real_read<uint32_t>(RealSeg(vsavept),RealOff(vsavept)+0x10);
 	if (svstable) {
-		RealPt dcctable=real_readd(RealSeg(svstable),RealOff(svstable)+0x02);
-		Bit8u entries=real_readb(RealSeg(dcctable),RealOff(dcctable)+0x00);
+		RealPt dcctable=real_read<uint32_t>(RealSeg(svstable),RealOff(svstable)+0x02);
+		Bit8u entries=real_read<uint8_t>(RealSeg(dcctable),RealOff(dcctable)+0x00);
 		if (set) {
 			if (entries) {
 				Bit16u swap=(*dcc<<8)|(*dcc>>8);
 				// search for the index in the dcc table
 				for (Bit8u entry=0; entry<entries; entry++) {
-					dccentry=real_readw(RealSeg(dcctable),RealOff(dcctable)+0x04+entry*2);
+					dccentry=real_read<uint16_t>(RealSeg(dcctable),RealOff(dcctable)+0x04+entry*2);
 					if ((dccentry==*dcc) || (dccentry==swap)) {
 						index=entry;
 						break;
@@ -91,19 +91,19 @@ void INT10_DisplayCombinationCode(Bit16u * dcc,bool set) {
 				}
 			}
 		} else {
-			index=real_readb(BIOSMEM_SEG,BIOSMEM_DCC_INDEX);
+			index=real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_DCC_INDEX);
 			// check if index within range
 			if (index<entries) {
-				dccentry=real_readw(RealSeg(dcctable),RealOff(dcctable)+0x04+index*2);
+				dccentry=real_read<uint16_t>(RealSeg(dcctable),RealOff(dcctable)+0x04+index*2);
 				if ((dccentry&0xff)==0) dccentry>>=8;
 				else if (dccentry>>8) {
-					Bit16u cfg_mono=((real_readw(BIOSMEM_SEG,BIOSMEM_INITIAL_MODE)&0x30)==0x30)?1:0;
+					Bit16u cfg_mono=((real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_INITIAL_MODE)&0x30)==0x30)?1:0;
 					if (cfg_mono^(dccentry&1)) dccentry=(dccentry<<8)|(dccentry>>8);
 				}
 			}
 		}
 	}
-	if (set) real_writeb(BIOSMEM_SEG,BIOSMEM_DCC_INDEX,index);
+	if (set) real_write<uint8_t>(BIOSMEM_SEG,BIOSMEM_DCC_INDEX,index);
 	else *dcc=dccentry;
 }
 
@@ -115,12 +115,12 @@ void INT10_GetFuncStateInformation(PhysPt save) {
 
 	/* First area in Bios Seg */
 	for (i=0;i<0x1e;i++) {
-		mem_writeb(save+0x4+i,real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE+i));
+		mem_writeb(save+0x4+i,real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE+i));
 	}
 	/* Second area */
-	mem_writeb(save+0x22,real_readb(BIOSMEM_SEG,BIOSMEM_NB_ROWS)+1);
+	mem_writeb(save+0x22,real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_NB_ROWS)+1);
 	for (i=1;i<3;i++) {
-		mem_writeb(save+0x22+i,real_readb(BIOSMEM_SEG,BIOSMEM_NB_ROWS+i));
+		mem_writeb(save+0x22+i,real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_NB_ROWS+i));
 	}
 	/* Zero out rest of block */
 	for (i=0x25;i<0x40;i++) mem_writeb(save+i,0);
@@ -181,7 +181,7 @@ static void EGA_RIL(Bit16u dx, Bit16u& port, Bit16u& regs) {
 	regs = 0; //if nul is returned it's a single register port
 	switch(dx) {
 	case 0x00: /* CRT Controller (25 reg) 3B4h mono modes, 3D4h color modes */
-		port = real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
+		port = real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
 		regs = 25;
 		break;
 	case 0x08: /* Sequencer (5 registers) 3C4h */
@@ -200,7 +200,7 @@ static void EGA_RIL(Bit16u dx, Bit16u& port, Bit16u& regs) {
 		port = 0x3C2;
 		break;
 	case 0x28: /* Feature Control register (3BAh mono modes, 3DAh color modes) */
-		port = real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6;
+		port = real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6;
 		break;
 	case 0x30: /* Graphics 1 Position register 3CCh */
 		port = 0x3CC;
@@ -221,10 +221,10 @@ void INT10_EGA_RIL_ReadRegister(Bit8u & bl, Bit16u dx) {
 	if(regs == 0) {
 		if(port) bl = IO_Read(port);
 	} else {
-		if(port == 0x3c0) IO_Read(real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
+		if(port == 0x3c0) IO_Read(real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
 		IO_Write(port,bl);
 		bl = IO_Read(port+1);
-		if(port == 0x3c0) IO_Read(real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
+		if(port == 0x3c0) IO_Read(real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
 		LOG(LOG_INT10,LOG_NORMAL)("EGA RIL read used with multi-reg");
 	}
 }
@@ -237,7 +237,7 @@ void INT10_EGA_RIL_WriteRegister(Bit8u & bl, Bit8u bh, Bit16u dx) {
 		if(port) IO_Write(port,bl);
 	} else {
 		if(port == 0x3c0) {
-			IO_Read(real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
+			IO_Read(real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
 			IO_Write(port,bl);
 			IO_Write(port,bh);
 		} else {
@@ -259,11 +259,11 @@ void INT10_EGA_RIL_ReadRegisterRange(Bit8u ch, Bit8u cl, Bit16u dx, PhysPt dst) 
 		if(ch<regs) {
 			if ((Bitu)ch+cl>regs) cl=(Bit8u)(regs-ch);
 			for (Bitu i=0; i<cl; i++) {
-				if(port == 0x3c0) IO_Read(real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
+				if(port == 0x3c0) IO_Read(real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
 				IO_Write(port,ch+i);
 				mem_writeb(dst++,IO_Read(port+1));
 			}
-			if(port == 0x3c0) IO_Read(real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
+			if(port == 0x3c0) IO_Read(real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
 		} else LOG(LOG_INT10,LOG_ERROR)("EGA RIL range read from %x for invalid register %x",port,ch);
 	}
 }
@@ -278,7 +278,7 @@ void INT10_EGA_RIL_WriteRegisterRange(Bit8u ch, Bit8u cl, Bit16u dx, PhysPt src)
 		if(ch<regs) {
 			if ((Bitu)ch+cl>regs) cl=(Bit8u)(regs-ch);
 			if(port == 0x3c0) {
-				IO_Read(real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
+				IO_Read(real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
 				for (Bitu i=0; i<cl; i++) {
 					IO_Write(port,ch+i);
 					IO_Write(port,mem_readb(src++));
@@ -320,7 +320,7 @@ void INT10_EGA_RIL_WriteRegisterSet(Bit16u cx, PhysPt tbl) {
 		} else {
 			Bit8u idx=mem_readb(tbl+2);
 			if(port == 0x3c0) {
-				IO_Read(real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
+				IO_Read(real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS) + 6);
 				IO_Write(port,idx);
 				IO_Write(port,vl);
 			} else {

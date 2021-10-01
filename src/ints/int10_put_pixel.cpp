@@ -30,25 +30,25 @@ void INT10_PutPixel(Bit16u x,Bit16u y,Bit8u page,Bit8u color) {
 	switch (CurMode->type) {
 	case M_CGA4:
 	{
-		if (real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE)<=5) {
+		if (real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE)<=5) {
 			// this is a 16k mode
 			Bit16u off=(y>>1)*80+(x>>2);
 			if (y&1) off+=8*1024;
 
-			Bit8u old=real_readb(0xb800,off);
+			Bit8u old=real_read<uint8_t>(0xb800,off);
 			if (color & 0x80) {
 				color&=3;
 				old^=color << (2*(3-(x&3)));
 			} else {
 				old=(old&cga_masks[x&3])|((color&3) << (2*(3-(x&3))));
 			}
-			real_writeb(0xb800,off,old);
+			real_write<uint8_t>(0xb800,off,old);
 		} else {
 			// a 32k mode: PCJr special case (see M_TANDY16)
 			Bit16u seg;
 			if (machine==MCH_PCJR) {
 				Bitu cpupage =
-					(real_readb(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE) >> 3) & 0x7;
+					(real_read<uint8_t>(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE) >> 3) & 0x7;
 				seg = cpupage << 10; // A14-16 to addr bits 14-16
 			} else
 				seg = 0xb800;
@@ -56,14 +56,14 @@ void INT10_PutPixel(Bit16u x,Bit16u y,Bit8u page,Bit8u color) {
 			Bit16u off=(y>>2)*160+((x>>2)&(~1));
 			off+=(8*1024) * (y & 3);
 
-			Bit16u old=real_readw(seg,off);
+			Bit16u old=real_read<uint16_t>(seg,off);
 			if (color & 0x80) {
 				old^=(color&1) << (7-(x&7));
 				old^=((color&2)>>1) << ((7-(x&7))+8);
 			} else {
 				old=(old&(~(0x101<<(7-(x&7))))) | ((color&1) << (7-(x&7))) | (((color&2)>>1) << ((7-(x&7))+8));
 			}
-			real_writew(seg,off,old);
+			real_write<uint16_t>(seg,off,old);
 		}
 	}
 	break;
@@ -71,14 +71,14 @@ void INT10_PutPixel(Bit16u x,Bit16u y,Bit8u page,Bit8u color) {
 		{
 				Bit16u off=(y>>1)*80+(x>>3);
 				if (y&1) off+=8*1024;
-				Bit8u old=real_readb(0xb800,off);
+				Bit8u old=real_read<uint8_t>(0xb800,off);
 				if (color & 0x80) {
 					color&=1;
 					old^=color << ((7-(x&7)));
 				} else {
 					old=(old&cga_masks2[x&7])|((color&1) << ((7-(x&7))));
 				}
-				real_writeb(0xb800,off,old);
+				real_write<uint8_t>(0xb800,off,old);
 		}
 		break;
 	case M_TANDY16:
@@ -86,14 +86,14 @@ void INT10_PutPixel(Bit16u x,Bit16u y,Bit8u page,Bit8u color) {
 		// find out if we are in a 32k mode (0x9 or 0xa)
 		// This requires special handling on the PCJR
 		// because only 16k are mapped at 0xB800
-		bool is_32k = (real_readb(BIOSMEM_SEG, BIOSMEM_CURRENT_MODE) >= 9)?
+		bool is_32k = (real_read<uint8_t>(BIOSMEM_SEG, BIOSMEM_CURRENT_MODE) >= 9)?
 			true:false;
 
 		Bit16u segment, offset;
 		if (is_32k) {
 			if (machine==MCH_PCJR) {
 				Bitu cpupage =
-					(real_readb(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE) >> 3) & 0x7;
+					(real_read<uint8_t>(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE) >> 3) & 0x7;
 				segment = cpupage << 10; // A14-16 to addr bits 14-16
 			} else
 				segment = 0xb800;
@@ -110,7 +110,7 @@ void INT10_PutPixel(Bit16u x,Bit16u y,Bit8u page,Bit8u color) {
 		}
 
 		// update the pixel
-		Bit8u old=real_readb(segment, offset);
+		Bit8u old=real_read<uint8_t>(segment, offset);
 		Bit8u p[2];
 		p[1] = (old >> 4) & 0xf;
 		p[0] = old & 0xf;
@@ -123,7 +123,7 @@ void INT10_PutPixel(Bit16u x,Bit16u y,Bit8u page,Bit8u color) {
 			p[ind]=color;
 		}
 		old = (p[1] << 4) | p[0];
-		real_writeb(segment,offset, old);
+		real_write<uint8_t>(segment,offset, old);
 	}
 	break;
 	case M_LIN4:
@@ -155,18 +155,18 @@ void INT10_PutPixel(Bit16u x,Bit16u y,Bit8u page,Bit8u color) {
 		// Perhaps also set mode 1
 		/* Calculate where the pixel is in video memory */
 		if (CurMode->plength !=
-		    (Bitu)real_readw(BIOSMEM_SEG, BIOSMEM_PAGE_SIZE))
+		    (Bitu)real_read<uint16_t>(BIOSMEM_SEG, BIOSMEM_PAGE_SIZE))
 			LOG(LOG_INT10, LOG_ERROR)
 			("PutPixel_EGA_p: %u != %x", CurMode->plength,
-			 real_readw(BIOSMEM_SEG, BIOSMEM_PAGE_SIZE));
+			 real_read<uint16_t>(BIOSMEM_SEG, BIOSMEM_PAGE_SIZE));
 		if (CurMode->swidth !=
-		    (Bitu)real_readw(BIOSMEM_SEG, BIOSMEM_NB_COLS) * 8)
+		    (Bitu)real_read<uint16_t>(BIOSMEM_SEG, BIOSMEM_NB_COLS) * 8)
 			LOG(LOG_INT10, LOG_ERROR)
 			("PutPixel_EGA_w: %u!=%x", CurMode->swidth,
-			 real_readw(BIOSMEM_SEG, BIOSMEM_NB_COLS) * 8);
+			 real_read<uint16_t>(BIOSMEM_SEG, BIOSMEM_NB_COLS) * 8);
 		PhysPt off = 0xa0000 +
-		             real_readw(BIOSMEM_SEG, BIOSMEM_PAGE_SIZE) * page +
-		             ((y * real_readw(BIOSMEM_SEG, BIOSMEM_NB_COLS) * 8 + x) >>
+		             real_read<uint16_t>(BIOSMEM_SEG, BIOSMEM_PAGE_SIZE) * page +
+		             ((y * real_read<uint16_t>(BIOSMEM_SEG, BIOSMEM_NB_COLS) * 8 + x) >>
 		              3);
 		/* Bitmask and set/reset should do the rest */
 		mem_readb(off);
@@ -188,9 +188,9 @@ void INT10_PutPixel(Bit16u x,Bit16u y,Bit8u page,Bit8u color) {
 		mem_writeb(PhysMake(0xa000,y*320+x),color);
 		break;
 	case M_LIN8: {
-			if (CurMode->swidth!=(Bitu)real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8)
-				LOG(LOG_INT10,LOG_ERROR)("PutPixel_VGA_w: %u!=%x",CurMode->swidth,real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8);
-			PhysPt off=S3_LFB_BASE+y*real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8+x;
+			if (CurMode->swidth!=(Bitu)real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8)
+				LOG(LOG_INT10,LOG_ERROR)("PutPixel_VGA_w: %u!=%x",CurMode->swidth,real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8);
+			PhysPt off=S3_LFB_BASE+y*real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8+x;
 			mem_writeb(off,color);
 			break;
 		}
@@ -209,7 +209,7 @@ void INT10_GetPixel(Bit16u x,Bit16u y,Bit8u page,Bit8u * color) {
 		{
 			Bit16u off=(y>>1)*80+(x>>2);
 			if (y&1) off+=8*1024;
-			Bit8u val=real_readb(0xb800,off);
+			Bit8u val=real_read<uint8_t>(0xb800,off);
 			*color=(val>>(((3-(x&3)))*2)) & 3 ;
 		}
 		break;
@@ -217,17 +217,17 @@ void INT10_GetPixel(Bit16u x,Bit16u y,Bit8u page,Bit8u * color) {
 		{
 			Bit16u off=(y>>1)*80+(x>>3);
 			if (y&1) off+=8*1024;
-			Bit8u val=real_readb(0xb800,off);
+			Bit8u val=real_read<uint8_t>(0xb800,off);
 			*color=(val>>(((7-(x&7))))) & 1 ;
 		}
 		break;
 	case M_TANDY16:
 		{
-			bool is_32k = (real_readb(BIOSMEM_SEG, BIOSMEM_CURRENT_MODE) >= 9)?true:false;
+			bool is_32k = (real_read<uint8_t>(BIOSMEM_SEG, BIOSMEM_CURRENT_MODE) >= 9)?true:false;
 			Bit16u segment, offset;
 			if (is_32k) {
 				if (machine==MCH_PCJR) {
-					Bitu cpupage = (real_readb(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE) >> 3) & 0x7;
+					Bitu cpupage = (real_read<uint8_t>(BIOSMEM_SEG, BIOSMEM_CRTCPU_PAGE) >> 3) & 0x7;
 					segment = cpupage << 10;
 				} else segment = 0xb800;
 				offset = (y >> 2) * (CurMode->swidth >> 1) + (x>>1);
@@ -237,19 +237,19 @@ void INT10_GetPixel(Bit16u x,Bit16u y,Bit8u page,Bit8u * color) {
 				offset = (y >> 1) * (CurMode->swidth >> 1) + (x>>1);
 				offset += (8*1024) * (y & 1);
 			}
-			Bit8u val=real_readb(segment,offset);
+			Bit8u val=real_read<uint8_t>(segment,offset);
 			*color=(val>>((x&1)?0:4)) & 0xf;
 		}
 		break;
 	case M_EGA:
 		{
 			/* Calculate where the pixel is in video memory */
-			if (CurMode->plength!=(Bitu)real_readw(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE))
-				LOG(LOG_INT10,LOG_ERROR)("GetPixel_EGA_p: %u!=%x",CurMode->plength,real_readw(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE));
-			if (CurMode->swidth!=(Bitu)real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8)
-				LOG(LOG_INT10,LOG_ERROR)("GetPixel_EGA_w: %u!=%x",CurMode->swidth,real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8);
-			PhysPt off=0xa0000+real_readw(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE)*page+
-				((y*real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8+x)>>3);
+			if (CurMode->plength!=(Bitu)real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE))
+				LOG(LOG_INT10,LOG_ERROR)("GetPixel_EGA_p: %u!=%x",CurMode->plength,real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE));
+			if (CurMode->swidth!=(Bitu)real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8)
+				LOG(LOG_INT10,LOG_ERROR)("GetPixel_EGA_w: %u!=%x",CurMode->swidth,real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8);
+			PhysPt off=0xa0000+real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE)*page+
+				((y*real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8+x)>>3);
 			Bitu shift=7-(x & 7);
 			/* Set the read map */
 			*color=0;
@@ -267,9 +267,9 @@ void INT10_GetPixel(Bit16u x,Bit16u y,Bit8u page,Bit8u * color) {
 		*color=mem_readb(PhysMake(0xa000,320*y+x));
 		break;
 	case M_LIN8: {
-			if (CurMode->swidth!=(Bitu)real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8)
-				LOG(LOG_INT10,LOG_ERROR)("GetPixel_VGA_w: %u!=%x",CurMode->swidth,real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8);
-			PhysPt off=S3_LFB_BASE+y*real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8+x;
+			if (CurMode->swidth!=(Bitu)real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8)
+				LOG(LOG_INT10,LOG_ERROR)("GetPixel_VGA_w: %u!=%x",CurMode->swidth,real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8);
+			PhysPt off=S3_LFB_BASE+y*real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS)*8+x;
 			*color = mem_readb(off);
 			break;
 		}

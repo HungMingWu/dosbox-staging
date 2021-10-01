@@ -148,7 +148,7 @@ bool BIOS_AddKeyToBuffer(Bit16u code) {
 	/* Check for buffer Full */
 	//TODO Maybe beeeeeeep or something although that should happend when internal buffer is full
 	if (ttail==head) return false;
-	real_writew(0x40,tail,code);
+	real_write<uint16_t>(0x40,tail,code);
 	mem_writew(BIOS_KEYBOARD_BUFFER_TAIL,ttail);
 	return true;
 }
@@ -174,7 +174,7 @@ static bool get_key(Bit16u &code) {
 	thead=head+2;
 	if (thead>=end) thead=start;
 	mem_writew(BIOS_KEYBOARD_BUFFER_HEAD,thead);
-	code = real_readw(0x40,head);
+	code = real_read<uint16_t>(0x40,head);
 	return true;
 }
 
@@ -182,7 +182,7 @@ static bool check_key(Bit16u &code) {
 	Bit16u head,tail;
 	head =mem_readw(BIOS_KEYBOARD_BUFFER_HEAD);
 	tail =mem_readw(BIOS_KEYBOARD_BUFFER_TAIL);
-	code = real_readw(0x40,head);
+	code = real_read<uint16_t>(0x40,head);
 	// cpu flags from instruction comparing head and tail pointers
 	CALLBACK_SZF(head==tail);
 	CALLBACK_SCF(head<tail);

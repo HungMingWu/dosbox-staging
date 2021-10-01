@@ -354,7 +354,7 @@ public:
 		if (machine == MCH_PCJR) activeDevice = &device_sn76496;
 		else activeDevice = &device_ncr8496;
 
-		real_writeb(0x40,0xd4,0x00);
+		real_write<uint8_t>(0x40,0xd4,0x00);
 		if (IS_TANDY_ARCH) {
 			/* enable tandy sound if tandy=true/auto */
 			if ((strcmp(section->Get_string("tandy"),"true")!=0) &&
@@ -405,7 +405,7 @@ public:
 		tandy.dac.amplitude = 0;
 
 		tandy.enabled=false;
-		real_writeb(0x40,0xd4,0xff);	/* BIOS Tandy DAC initialization value */
+		real_write<uint8_t>(0x40,0xd4,0xff);	/* BIOS Tandy DAC initialization value */
 
 		((device_t&)device).device_start();
 		device.convert_samplerate(static_cast<int>(sample_rate));

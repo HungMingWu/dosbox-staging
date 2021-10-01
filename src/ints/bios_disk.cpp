@@ -68,24 +68,24 @@ void updateDPT(void) {
 	if(imageDiskList[2]) {
 		PhysPt dp0physaddr=CALLBACK_PhysPointer(diskparm0);
 		imageDiskList[2]->Get_Geometry(&tmpheads, &tmpcyl, &tmpsect, &tmpsize);
-		phys_writew(dp0physaddr,(Bit16u)tmpcyl);
-		phys_writeb(dp0physaddr+0x2,(Bit8u)tmpheads);
-		phys_writew(dp0physaddr+0x3,0);
-		phys_writew(dp0physaddr+0x5,(Bit16u)-1);
-		phys_writeb(dp0physaddr+0x7,0);
-		phys_writeb(dp0physaddr+0x8,(0xc0 | (((imageDiskList[2]->heads) > 8) << 3)));
-		phys_writeb(dp0physaddr+0x9,0);
-		phys_writeb(dp0physaddr+0xa,0);
-		phys_writeb(dp0physaddr+0xb,0);
-		phys_writew(dp0physaddr+0xc,(Bit16u)tmpcyl);
-		phys_writeb(dp0physaddr+0xe,(Bit8u)tmpsect);
+		phys_write<uint16_t>(dp0physaddr,(Bit16u)tmpcyl);
+		phys_write<uint8_t>(dp0physaddr+0x2,(Bit8u)tmpheads);
+		phys_write<uint16_t>(dp0physaddr+0x3,0);
+		phys_write<uint16_t>(dp0physaddr+0x5,(Bit16u)-1);
+		phys_write<uint8_t>(dp0physaddr+0x7,0);
+		phys_write<uint8_t>(dp0physaddr+0x8,(0xc0 | (((imageDiskList[2]->heads) > 8) << 3)));
+		phys_write<uint8_t>(dp0physaddr+0x9,0);
+		phys_write<uint8_t>(dp0physaddr+0xa,0);
+		phys_write<uint8_t>(dp0physaddr+0xb,0);
+		phys_write<uint16_t>(dp0physaddr+0xc,(Bit16u)tmpcyl);
+		phys_write<uint8_t>(dp0physaddr+0xe,(Bit8u)tmpsect);
 	}
 	if(imageDiskList[3]) {
 		PhysPt dp1physaddr=CALLBACK_PhysPointer(diskparm1);
 		imageDiskList[3]->Get_Geometry(&tmpheads, &tmpcyl, &tmpsect, &tmpsize);
-		phys_writew(dp1physaddr,(Bit16u)tmpcyl);
-		phys_writeb(dp1physaddr+0x2,(Bit8u)tmpheads);
-		phys_writeb(dp1physaddr+0xe,(Bit8u)tmpsect);
+		phys_write<uint16_t>(dp1physaddr,(Bit16u)tmpcyl);
+		phys_write<uint8_t>(dp1physaddr+0x2,(Bit8u)tmpheads);
+		phys_write<uint8_t>(dp1physaddr+0xe,(Bit8u)tmpsect);
 	}
 }
 
@@ -406,7 +406,7 @@ static Bitu INT13_DiskHandler(void) {
 				return CBRET_NONE;
 			}
 			for(t=0;t<512;t++) {
-				real_writeb(segat,bufptr,sectbuf[t]);
+				real_write<uint8_t>(segat,bufptr,sectbuf[t]);
 				bufptr++;
 			}
 		}
@@ -422,7 +422,7 @@ static Bitu INT13_DiskHandler(void) {
 		bufptr = reg_bx;
 		for (Bitu i = 0; i < reg_al; i++) {
 			for(t=0;t<imageDiskList[drivenum]->getSectSize();t++) {
-				sectbuf[t] = real_readb(SegValue(es),bufptr);
+				sectbuf[t] = real_read<uint8_t>(SegValue(es),bufptr);
 				bufptr++;
 			}
 			last_status = imageDiskList[drivenum]->Write_Sector((Bit32u)reg_dh, (Bit32u)(reg_ch | ((reg_cl & 0xc0) << 2)), (Bit32u)((reg_cl & 63) + i), &sectbuf[0]);
@@ -457,7 +457,7 @@ static Bitu INT13_DiskHandler(void) {
 				return CBRET_NONE;
 			}
 			for(t=0;t<512;t++) {
-				real_writeb(segat,bufptr,sectbuf[t]);
+				real_write<uint8_t>(segat,bufptr,sectbuf[t]);
 				bufptr++;
 			}
 		}*/
@@ -594,8 +594,8 @@ void BIOS_SetupDisks(void) {
 	PhysPt dp0physaddr=CALLBACK_PhysPointer(diskparm0);
 	PhysPt dp1physaddr=CALLBACK_PhysPointer(diskparm1);
 	for (int i = 0; i < 16; i++) {
-		phys_writeb(dp0physaddr+i,0);
-		phys_writeb(dp1physaddr+i,0);
+		phys_write<uint8_t>(dp0physaddr+i,0);
+		phys_write<uint8_t>(dp1physaddr+i,0);
 	}
 
 	imgDTASeg = 0;

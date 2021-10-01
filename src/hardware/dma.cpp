@@ -58,7 +58,7 @@ static void DMA_BlockRead(PhysPt spage,PhysPt offset,void * data,Bitu size,Bit8u
 		if (page < EMM_PAGEFRAME4K) page = paging.firstmb[page];
 		else if (page < EMM_PAGEFRAME4K+0x10) page = ems_board_mapping[page];
 		else if (page < LINK_START) page = paging.firstmb[page];
-		*write++=phys_readb(page*4096 + (offset & 4095));
+		*write++=phys_read<uint8_t>(page*4096 + (offset & 4095));
 	}
 }
 
@@ -79,7 +79,7 @@ static void DMA_BlockWrite(PhysPt spage,PhysPt offset,void * data,Bitu size,Bit8
 		if (page < EMM_PAGEFRAME4K) page = paging.firstmb[page];
 		else if (page < EMM_PAGEFRAME4K+0x10) page = ems_board_mapping[page];
 		else if (page < LINK_START) page = paging.firstmb[page];
-		phys_writeb(page*4096 + (offset & 4095), *read++);
+		phys_write<uint8_t>(page*4096 + (offset & 4095), *read++);
 	}
 }
 

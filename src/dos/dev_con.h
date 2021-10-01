@@ -141,7 +141,7 @@ bool device_CON::Write(Bit8u * data,Bit16u * size) {
 				continue;
 			} else if(data[count] == '\t' && !dos.direct_output) {
 				/* expand tab if not direct output */
-				page = real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE);
+				page = real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE);
 				do {
 					Output(' ');
 					col=CURSOR_POS_COL(page);
@@ -175,7 +175,7 @@ bool device_CON::Write(Bit8u * data,Bit16u * size) {
 	}
 	/*ansi.esc and ansi.sci are true */
 	if (!dos.internal_output) ansi.enabled=true;
-	page = real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE);
+	page = real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE);
 	switch(data[count]){
 		case '0':
 		case '1':
@@ -286,8 +286,8 @@ bool device_CON::Write(Bit8u * data,Bit16u * size) {
 				ansi.warned = true;
 				LOG(LOG_IOCTL,LOG_WARN)("ANSI SEQUENCES USED");
 			}
-			ncols = real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS);
-			nrows = IS_EGAVGA_ARCH ? (real_readb(BIOSMEM_SEG,BIOSMEM_NB_ROWS) + 1) : 25;
+			ncols = real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS);
+			nrows = IS_EGAVGA_ARCH ? (real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_NB_ROWS) + 1) : 25;
 			/* Turn them into positions that are on the screen */
 			if(ansi.data[0] == 0) ansi.data[0] = 1;
 			if(ansi.data[1] == 0) ansi.data[1] = 1;
@@ -309,7 +309,7 @@ bool device_CON::Write(Bit8u * data,Bit16u * size) {
 		case 'B': /*cursor Down */
 			col=CURSOR_POS_COL(page) ;
 			row=CURSOR_POS_ROW(page) ;
-			nrows = IS_EGAVGA_ARCH ? (real_readb(BIOSMEM_SEG,BIOSMEM_NB_ROWS) + 1) : 25;
+			nrows = IS_EGAVGA_ARCH ? (real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_NB_ROWS) + 1) : 25;
 			tempdata = (ansi.data[0]? ansi.data[0] : 1);
 			if(tempdata + static_cast<Bitu>(row) >= nrows)
 				{ row = nrows - 1;}
@@ -320,7 +320,7 @@ bool device_CON::Write(Bit8u * data,Bit16u * size) {
 		case 'C': /*cursor forward */
 			col=CURSOR_POS_COL(page);
 			row=CURSOR_POS_ROW(page);
-			ncols = real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS);
+			ncols = real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS);
 			tempdata=(ansi.data[0]? ansi.data[0] : 1);
 			if(tempdata + static_cast<Bitu>(col) >= ncols) 
 				{ col = ncols - 1;} 
@@ -363,7 +363,7 @@ bool device_CON::Write(Bit8u * data,Bit16u * size) {
 		case 'K': /* erase till end of line (don't touch cursor) */
 			col = CURSOR_POS_COL(page);
 			row = CURSOR_POS_ROW(page);
-			ncols = real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS);
+			ncols = real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS);
 			INT10_WriteChar(' ',ansi.attr,page,ncols-col,true); //Use this one to prevent scrolling when end of screen is reached
 			//for(i = col;i<(Bitu) ncols; i++) INT10_TeletypeOutputAttr(' ',ansi.attr,true);
 			INT10_SetCursorPos(row,col,page);
@@ -371,8 +371,8 @@ bool device_CON::Write(Bit8u * data,Bit16u * size) {
 			break;
 		case 'M': /* delete line (NANSI) */
 			row = CURSOR_POS_ROW(page);
-			ncols = real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS);
-			nrows = IS_EGAVGA_ARCH ? (real_readb(BIOSMEM_SEG,BIOSMEM_NB_ROWS) + 1) : 25;
+			ncols = real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS);
+			nrows = IS_EGAVGA_ARCH ? (real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_NB_ROWS) + 1) : 25;
 			INT10_ScrollWindow(row,0,nrows-1,ncols-1,ansi.data[0]? -ansi.data[0] : -1,ansi.attr,0xFF);
 			ClearAnsi();
 			break;
@@ -405,7 +405,7 @@ Bit16u device_CON::GetInformation(void) {
 	Bit16u tail=mem_readw(BIOS_KEYBOARD_BUFFER_TAIL);
 
 	if ((head==tail) && !readcache) return 0x80D3;	/* No Key Available */
-	if (readcache || real_readw(0x40,head)) return 0x8093;		/* Key Available */
+	if (readcache || real_read<uint16_t>(0x40,head)) return 0x8093;		/* Key Available */
 
 	/* remove the zero from keyboard buffer */
 	Bit16u start=mem_readw(BIOS_KEYBOARD_BUFFER_START);
@@ -419,7 +419,7 @@ Bit16u device_CON::GetInformation(void) {
 void device_CON::Output(Bit8u chr) {
 	if (dos.internal_output || ansi.enabled) {
 		if (CurMode->type==M_TEXT) {
-			Bit8u page=real_readb(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE);
+			Bit8u page=real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE);
 			Bit8u col=CURSOR_POS_COL(page);
 			Bit8u row=CURSOR_POS_ROW(page);
 			BIOS_NCOLS;BIOS_NROWS;

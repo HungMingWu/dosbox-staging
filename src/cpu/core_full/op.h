@@ -450,7 +450,7 @@ switch (inst.code.op) {
 		case 7:		/* INVLPG */
 			if (cpu.pmode && cpu.cpl) EXCEPTION(EXCEPTION_GP);
 			FillFlags();
-			PAGING_ClearTLB();
+			paging.clearTLB();
 			goto nextopcode;
 		default:
 			LOG(LOG_CPU,LOG_ERROR)("Group 7 Illegal subfunction %X", static_cast<uint32_t>(inst.rm_index));

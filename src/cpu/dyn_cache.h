@@ -170,7 +170,7 @@ public:
 		                               // as soon as possible
 
 		Bit32u ip_point=SegPhys(cs)+reg_eip;
-		ip_point=(PAGING_GetPhysicalPage(ip_point)-(phys_page<<12))+(ip_point&0xfff);
+		ip_point=(paging.GetPhysicalPage(ip_point)-(phys_page<<12))+(ip_point&0xfff);
 		while (index>=0) {
 			Bitu map=0;
 			// see if there is still some code in the range
@@ -215,8 +215,8 @@ public:
 			E_Exit("wb:non-readable code page found that is no ROM page");
 		}
 		addr&=4095;
-		if (host_readb(hostmem+addr)==(Bit8u)val) return;
-		host_writeb(hostmem+addr,val);
+		if (host_read<Bit8u>(hostmem+addr)==(Bit8u)val) return;
+		host_write<uint8_t>(hostmem+addr,val);
 		// see if there's code where we are writing to
 		if (!write_map[addr]) {
 			if (active_blocks)
@@ -240,8 +240,8 @@ public:
 			E_Exit("ww:non-readable code page found that is no ROM page");
 		}
 		addr&=4095;
-		if (host_readw(hostmem+addr)==(Bit16u)val) return;
-		host_writew(hostmem+addr,val);
+		if (host_read<uint16_t>(hostmem+addr)==(Bit16u)val) return;
+		host_write<uint16_t>(hostmem+addr,val);
 		// see if there's code where we are writing to
 		if (!read_unaligned_uint16(&write_map[addr])) {
 			if (active_blocks)
@@ -254,7 +254,7 @@ public:
 		} else if (!invalidation_map) {
 			invalidation_map = alloc_invalidation_map();
 		}
-		host_addw(&invalidation_map[addr], 0x0101);
+		host_add<uint16_t>(&invalidation_map[addr], 0x0101);
 		InvalidateRange(addr,addr+1);
 	}
 
@@ -265,8 +265,8 @@ public:
 			E_Exit("wd:non-readable code page found that is no ROM page");
 		}
 		addr&=4095;
-		if (host_readd(hostmem+addr)==(Bit32u)val) return;
-		host_writed(hostmem+addr,val);
+		if (host_read<uint32_t>(hostmem+addr)==(Bit32u)val) return;
+		host_write<uint32_t>(hostmem+addr,val);
 		// see if there's code where we are writing to
 		if (!read_unaligned_uint32(&write_map[addr])) {
 			if (active_blocks)
@@ -279,7 +279,7 @@ public:
 		} else if (!invalidation_map) {
 			invalidation_map = alloc_invalidation_map();
 		}
-		host_addd(&invalidation_map[addr], 0x01010101);
+		host_add<uint32_t>(&invalidation_map[addr], 0x01010101);
 		InvalidateRange(addr,addr+3);
 	}
 
@@ -290,7 +290,7 @@ public:
 			E_Exit("cb:non-readable code page found that is no ROM page");
 		}
 		addr&=4095;
-		if (host_readb(hostmem+addr)==(Bit8u)val) return false;
+		if (host_read<Bit8u>(hostmem+addr)==(Bit8u)val) return false;
 		// see if there's code where we are writing to
 		if (!write_map[addr]) {
 			if (!active_blocks) {
@@ -309,7 +309,7 @@ public:
 				return true;
 			}
 		}
-		host_writeb(hostmem+addr,val);
+		host_write<uint8_t>(hostmem+addr,val);
 		return false;
 	}
 
@@ -320,7 +320,7 @@ public:
 			E_Exit("cw:non-readable code page found that is no ROM page");
 		}
 		addr&=4095;
-		if (host_readw(hostmem+addr)==(Bit16u)val) return false;
+		if (host_read<uint16_t>(hostmem+addr)==(Bit16u)val) return false;
 		// see if there's code where we are writing to
 		if (!read_unaligned_uint16(&write_map[addr])) {
 			if (!active_blocks) {
@@ -333,13 +333,13 @@ public:
 			if (!invalidation_map)
 				invalidation_map = alloc_invalidation_map();
 
-			host_addw(&invalidation_map[addr], 0x0101);
+			host_add<uint16_t>(&invalidation_map[addr], 0x0101);
 			if (InvalidateRange(addr,addr+1)) {
 				cpu.exception.which=SMC_CURRENT_BLOCK;
 				return true;
 			}
 		}
-		host_writew(hostmem+addr,val);
+		host_write<uint16_t>(hostmem+addr,val);
 		return false;
 	}
 
@@ -350,7 +350,7 @@ public:
 			E_Exit("cd:non-readable code page found that is no ROM page");
 		}
 		addr&=4095;
-		if (host_readd(hostmem+addr)==(Bit32u)val) return false;
+		if (host_read<uint32_t>(hostmem+addr)==(Bit32u)val) return false;
 		// see if there's code where we are writing to
 		if (!read_unaligned_uint32(&write_map[addr])) {
 			if (!active_blocks) {
@@ -363,13 +363,13 @@ public:
 			if (!invalidation_map)
 				invalidation_map = alloc_invalidation_map();
 
-			host_addd(&invalidation_map[addr], 0x01010101);
+			host_add<uint32_t>(&invalidation_map[addr], 0x01010101);
 			if (InvalidateRange(addr,addr+3)) {
 				cpu.exception.which=SMC_CURRENT_BLOCK;
 				return true;
 			}
 		}
-		host_writed(hostmem+addr,val);
+		host_write<uint32_t>(hostmem+addr,val);
 		return false;
 	}
 
@@ -435,7 +435,7 @@ public:
 	{
 		// revert to old handler
 		MEM_SetPageHandler(phys_page,1,old_pagehandler);
-		PAGING_ClearTLB();
+		paging.clearTLB();
 
 		// remove page from the lists
 		if (prev) prev->next=next;

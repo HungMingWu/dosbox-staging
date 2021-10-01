@@ -145,7 +145,7 @@ static void CAPTURE_AddAviChunk(const char * tag, Bit32u size, void * data, Bit3
 	Bit8u chunk[8];Bit8u *index;Bit32u pos, writesize;
 
 	chunk[0] = tag[0];chunk[1] = tag[1];chunk[2] = tag[2];chunk[3] = tag[3];
-	host_writed(&chunk[4], size);   
+	host_write<uint32_t>(&chunk[4], size);   
 	/* Write the actual data */
 	fwrite(chunk,1,8,capture.video.handle);
 	writesize = (size+1)&~1;
@@ -164,9 +164,9 @@ static void CAPTURE_AddAviChunk(const char * tag, Bit32u size, void * data, Bit3
 	index[1] = tag[1];
 	index[2] = tag[2];
 	index[3] = tag[3];
-	host_writed(index+4, flags);
-	host_writed(index+8, pos);
-	host_writed(index+12, size);
+	host_write<uint32_t>(index+4, flags);
+	host_write<uint32_t>(index+8, pos);
+	host_write<uint32_t>(index+12, size);
 }
 #endif
 
@@ -183,8 +183,8 @@ static void CAPTURE_VideoEvent(bool pressed) {
 		Bitu main_list;
 		Bitu header_pos=0;
 #define AVIOUT4(_S_) memcpy(&avi_header[header_pos],_S_,4);header_pos+=4;
-#define AVIOUTw(_S_) host_writew(&avi_header[header_pos], _S_);header_pos+=2;
-#define AVIOUTd(_S_) host_writed(&avi_header[header_pos], _S_);header_pos+=4;
+#define AVIOUTw(_S_) host_write<uint16_t>(&avi_header[header_pos], _S_);header_pos+=2;
+#define AVIOUTd(_S_) host_write<uint32_t>(&avi_header[header_pos], _S_);header_pos+=4;
 		/* Try and write an avi header */
 		AVIOUT4("RIFF");                    // Riff header 
 		AVIOUTd(AVI_HEADER_SIZE + capture.video.written - 8 + capture.video.indexused);
@@ -294,7 +294,7 @@ static void CAPTURE_VideoEvent(bool pressed) {
 		AVIOUT4("movi");
 		/* First add the index table to the end */
 		memcpy(capture.video.index, "idx1", 4);
-		host_writed( capture.video.index+4, capture.video.indexused - 8 );
+		host_write<uint32_t>( capture.video.index+4, capture.video.indexused - 8 );
 		fwrite( capture.video.index, 1, capture.video.indexused, capture.video.handle);
 		fseek(capture.video.handle, 0, SEEK_SET);
 		fwrite(&avi_header, 1, AVI_HEADER_SIZE, capture.video.handle);
@@ -718,10 +718,10 @@ static void CAPTURE_WaveEvent(bool pressed) {
 		fwrite(capture.wave.buf,1,capture.wave.used*4,capture.wave.handle);
 		capture.wave.length+=capture.wave.used*4;
 		/* Fill in the header with useful information */
-		host_writed(&wavheader[0x04],capture.wave.length+sizeof(wavheader)-8);
-		host_writed(&wavheader[0x18],capture.wave.freq);
-		host_writed(&wavheader[0x1C],capture.wave.freq*4);
-		host_writed(&wavheader[0x28],capture.wave.length);
+		host_write<uint32_t>(&wavheader[0x04],capture.wave.length+sizeof(wavheader)-8);
+		host_write<uint32_t>(&wavheader[0x18],capture.wave.freq);
+		host_write<uint32_t>(&wavheader[0x1C],capture.wave.freq*4);
+		host_write<uint32_t>(&wavheader[0x28],capture.wave.length);
 		
 		fseek(capture.wave.handle,0,0);
 		fwrite(wavheader,1,sizeof(wavheader),capture.wave.handle);

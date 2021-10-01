@@ -123,7 +123,7 @@ static Bits PageFaultCore(void) {
 	if (!pf_queue.used) E_Exit("PF Core without PF");
 	PF_Entry * entry=&pf_queue.entries[pf_queue.used-1];
 	X86PageEntry pentry;
-	pentry.load=phys_readd(entry->page_addr);
+	pentry.load=phys_read<uint32_t>(entry->page_addr);
 	if (pentry.block.p && entry->cs == SegValue(cs) && entry->eip==reg_eip) {
 		cpu.mpl=entry->mpl;
 		return -1;
@@ -171,10 +171,10 @@ static inline void InitPageUpdateLink(Bitu relink,PhysPt addr) {
 	if (paging.links.used) {
 		if (paging.links.entries[paging.links.used-1]==(addr>>12)) {
 			paging.links.used--;
-			PAGING_UnlinkPages(addr>>12,1);
+			paging.UnlinkPages(addr >> 12, 1);
 		}
 	}
-	if (relink>1) PAGING_LinkPage_ReadOnly(addr>>12,relink);
+	if (relink>1) paging.LinkPage(addr >> 12, relink, true);
 }
 
 static inline void InitPageCheckPresence(PhysPt lin_addr,bool writing,X86PageEntry& table,X86PageEntry& entry) {
@@ -182,22 +182,22 @@ static inline void InitPageCheckPresence(PhysPt lin_addr,bool writing,X86PageEnt
 	Bitu d_index=lin_page >> 10;
 	Bitu t_index=lin_page & 0x3ff;
 	Bitu table_addr=(paging.base.page<<12)+d_index*4;
-	table.load=phys_readd(table_addr);
+	table.load=phys_read<uint32_t>(table_addr);
 	if (!table.block.p) {
 		LOG(LOG_PAGING,LOG_NORMAL)("NP Table");
 		PAGING_PageFault(lin_addr,table_addr,
 			(writing?0x02:0x00) | (((cpu.cpl&cpu.mpl)==0)?0x00:0x04));
-		table.load=phys_readd(table_addr);
+		table.load=phys_read<uint32_t>(table_addr);
 		if (GCC_UNLIKELY(!table.block.p))
 			E_Exit("Pagefault didn't correct table");
 	}
 	Bitu entry_addr=(table.block.base<<12)+t_index*4;
-	entry.load=phys_readd(entry_addr);
+	entry.load=phys_read<uint32_t>(entry_addr);
 	if (!entry.block.p) {
 //		LOG(LOG_PAGING,LOG_NORMAL)("NP Page");
 		PAGING_PageFault(lin_addr,entry_addr,
 			(writing?0x02:0x00) | (((cpu.cpl&cpu.mpl)==0)?0x00:0x04));
-		entry.load=phys_readd(entry_addr);
+		entry.load=phys_read<uint32_t>(entry_addr);
 		if (GCC_UNLIKELY(!entry.block.p))
 			E_Exit("Pagefault didn't correct page");
 	}
@@ -208,7 +208,7 @@ static inline bool InitPageCheckPresence_CheckOnly(PhysPt lin_addr,bool writing,
 	Bitu d_index=lin_page >> 10;
 	Bitu t_index=lin_page & 0x3ff;
 	Bitu table_addr=(paging.base.page<<12)+d_index*4;
-	table.load=phys_readd(table_addr);
+	table.load=phys_read<uint32_t>(table_addr);
 	if (!table.block.p) {
 		paging.cr2=lin_addr;
 		cpu.exception.which=EXCEPTION_PF;
@@ -216,7 +216,7 @@ static inline bool InitPageCheckPresence_CheckOnly(PhysPt lin_addr,bool writing,
 		return false;
 	}
 	Bitu entry_addr=(table.block.base<<12)+t_index*4;
-	entry.load=phys_readd(entry_addr);
+	entry.load=phys_read<uint32_t>(entry_addr);
 	if (!entry.block.p) {
 		paging.cr2=lin_addr;
 		cpu.exception.which=EXCEPTION_PF;
@@ -376,7 +376,7 @@ public:
 
 			if (!table.block.a) {
 				table.block.a=1;		// set page table accessed
-				phys_writed((paging.base.page<<12)+(lin_page >> 10)*4,table.load);
+				phys_write<uint32_t>((paging.base.page<<12)+(lin_page >> 10)*4,table.load);
 			}
 			if ((!entry.block.a) || (!entry.block.d)) {
 				entry.block.a=1;		// set page accessed
@@ -385,7 +385,7 @@ public:
 				// page will be fully linked so we can't track later writes
 				if (writing || (priv_check==0)) entry.block.d=1;		// mark page as dirty
 
-				phys_writed((table.block.base<<12)+(lin_page & 0x3ff)*4,entry.load);
+				phys_write<uint32_t>((table.block.base<<12)+(lin_page & 0x3ff)*4,entry.load);
 			}
 
 			phys_page=entry.block.base;
@@ -395,27 +395,27 @@ public:
 			if (priv_check==0) {
 				// if reading we could link the page as read-only to later cacth writes,
 				// will slow down pretty much but allows catching all dirty events
-				PAGING_LinkPage(lin_page,phys_page);
+				paging.LinkPage(lin_page,phys_page);
 			} else {
 				if (priv_check==1) {
-					PAGING_LinkPage(lin_page,phys_page);
+					paging.LinkPage(lin_page, phys_page);
 					return 1;
 				} else if (writing) {
 					PageHandler * handler=MEM_GetPageHandler(phys_page);
-					PAGING_LinkPage(lin_page,phys_page);
+					paging.LinkPage(lin_page, phys_page);
 					if (!(handler->flags & PFLAG_READABLE)) return 1;
 					if (!(handler->flags & PFLAG_WRITEABLE)) return 1;
-					if (get_tlb_read(lin_addr)!=get_tlb_write(lin_addr)) return 1;
+					if (paging.get_tlb<true>(lin_addr) != paging.get_tlb<false>(lin_addr)) return 1;
 					if (phys_page>1) return phys_page;
 					else return 1;
 				} else {
-					PAGING_LinkPage_ReadOnly(lin_page,phys_page);
+					paging.LinkPage(lin_page, phys_page, true);
 				}
 			}
 		} else {
 			if (lin_page<LINK_START) phys_page=paging.firstmb[lin_page];
 			else phys_page=lin_page;
-			PAGING_LinkPage(lin_page,phys_page);
+			paging.LinkPage(lin_page, phys_page);
 		}
 		return 0;
 	}
@@ -441,7 +441,7 @@ public:
 			Bitu phys_page;
 			if (lin_page<LINK_START) phys_page=paging.firstmb[lin_page];
 			else phys_page=lin_page;
-			PAGING_LinkPage(lin_page,phys_page);
+			paging.LinkPage(lin_page, phys_page);
 		}
 		return true;
 	}
@@ -455,11 +455,11 @@ public:
 
 			if (!table.block.a) {
 				table.block.a=1;		//Set access
-				phys_writed((paging.base.page<<12)+(lin_page >> 10)*4,table.load);
+				phys_write<uint32_t>((paging.base.page<<12)+(lin_page >> 10)*4,table.load);
 			}
 			if (!entry.block.a) {
 				entry.block.a=1;					//Set access
-				phys_writed((table.block.base<<12)+(lin_page & 0x3ff)*4,entry.load);
+				phys_write<uint32_t>((table.block.base<<12)+(lin_page & 0x3ff)*4,entry.load);
 			}
 			phys_page=entry.block.base;
 			// maybe use read-only page here if possible
@@ -467,7 +467,7 @@ public:
 			if (lin_page<LINK_START) phys_page=paging.firstmb[lin_page];
 			else phys_page=lin_page;
 		}
-		PAGING_LinkPage(lin_page,phys_page);
+		paging.LinkPage(lin_page, phys_page);
 	}
 };
 
@@ -478,23 +478,23 @@ public:
 	}
 	void writeb(PhysPt addr,Bitu val) {
 		InitPage(addr,(Bit8u)(val&0xff));
-		host_writeb(get_tlb_read(addr)+addr,(Bit8u)(val&0xff));
+		host_write<uint8_t>(paging.get_tlb<true>(addr)+addr,(Bit8u)(val&0xff));
 	}
 	void writew(PhysPt addr,Bitu val) {
 		InitPage(addr,(Bit16u)(val&0xffff));
-		host_writew(get_tlb_read(addr)+addr,(Bit16u)(val&0xffff));
+		host_write<uint16_t>(paging.get_tlb<true>(addr)+addr,(Bit16u)(val&0xffff));
 	}
 	void writed(PhysPt addr,Bitu val) {
 		InitPage(addr,(Bit32u)val);
-		host_writed(get_tlb_read(addr)+addr,(Bit32u)val);
+		host_write<uint32_t>(paging.get_tlb<true>(addr)+addr,(Bit32u)val);
 	}
 	bool writeb_checked(PhysPt addr,Bitu val) {
 		Bitu writecode=InitPageCheckOnly(addr,(Bit8u)(val&0xff));
 		if (writecode) {
 			HostPt tlb_addr;
-			if (writecode>1) tlb_addr=get_tlb_read(addr);
-			else tlb_addr=get_tlb_write(addr);
-			host_writeb(tlb_addr+addr,(Bit8u)(val&0xff));
+			if (writecode>1) tlb_addr = paging.get_tlb<true>(addr);
+			else tlb_addr = paging.get_tlb<false>(addr);
+			host_write<uint8_t>(tlb_addr+addr,(Bit8u)(val&0xff));
 			return false;
 		}
 		return true;
@@ -503,9 +503,9 @@ public:
 		Bitu writecode=InitPageCheckOnly(addr,(Bit16u)(val&0xffff));
 		if (writecode) {
 			HostPt tlb_addr;
-			if (writecode>1) tlb_addr=get_tlb_read(addr);
-			else tlb_addr=get_tlb_write(addr);
-			host_writew(tlb_addr+addr,(Bit16u)(val&0xffff));
+			if (writecode>1) tlb_addr = paging.get_tlb<true>(addr);
+			else tlb_addr = paging.get_tlb<false>(addr);
+			host_write<uint16_t>(tlb_addr+addr,(Bit16u)(val&0xffff));
 			return false;
 		}
 		return true;
@@ -514,9 +514,9 @@ public:
 		Bitu writecode=InitPageCheckOnly(addr,(Bit32u)val);
 		if (writecode) {
 			HostPt tlb_addr;
-			if (writecode>1) tlb_addr=get_tlb_read(addr);
-			else tlb_addr=get_tlb_write(addr);
-			host_writed(tlb_addr+addr,(Bit32u)val);
+			if (writecode>1) tlb_addr = paging.get_tlb<true>(addr);
+			else tlb_addr = paging.get_tlb<false>(addr);
+			host_write<uint32_t>(tlb_addr+addr,(Bit32u)val);
 			return false;
 		}
 		return true;
@@ -537,19 +537,19 @@ public:
 
 			if (!table.block.a) {
 				table.block.a=1;		//Set access
-				phys_writed((paging.base.page<<12)+(lin_page >> 10)*4,table.load);
+				phys_write<uint32_t>((paging.base.page<<12)+(lin_page >> 10)*4,table.load);
 			}
 			if ((!entry.block.a) || (!entry.block.d)) {
 				entry.block.a=1;	//Set access
 				entry.block.d=1;	//Set dirty
-				phys_writed((table.block.base<<12)+(lin_page & 0x3ff)*4,entry.load);
+				phys_write<uint32_t>((table.block.base<<12)+(lin_page & 0x3ff)*4,entry.load);
 			}
 			phys_page=entry.block.base;
-			PAGING_LinkPage(lin_page,phys_page);
+			paging.LinkPage(lin_page, phys_page);
 		} else {
 			if (lin_page<LINK_START) phys_page=paging.firstmb[lin_page];
 			else phys_page=lin_page;
-			PAGING_LinkPage(lin_page,phys_page);
+			paging.LinkPage(lin_page, phys_page);
 		}
 	}
 	Bitu InitPageCheckOnly(Bitu lin_addr, [[maybe_unused]] Bitu val) {
@@ -569,12 +569,12 @@ public:
 				cpu.exception.error=0x07;
 				return 0;
 			}
-			PAGING_LinkPage(lin_page,entry.block.base);
+			paging.LinkPage(lin_page, entry.block.base);
 		} else {
 			Bitu phys_page;
-			if (lin_page<LINK_START) phys_page=paging.firstmb[lin_page];
-			else phys_page=lin_page;
-			PAGING_LinkPage(lin_page,phys_page);
+			if (lin_page<LINK_START) phys_page = paging.firstmb[lin_page];
+			else phys_page = lin_page;
+			paging.LinkPage(lin_page, phys_page);
 		}
 		return 1;
 	}
@@ -588,35 +588,34 @@ public:
 
 			if (!table.block.a) {
 				table.block.a=1;		//Set access
-				phys_writed((paging.base.page<<12)+(lin_page >> 10)*4,table.load);
+				phys_write<uint32_t>((paging.base.page<<12)+(lin_page >> 10)*4,table.load);
 			}
 			if (!entry.block.a) {
 				entry.block.a=1;	//Set access
-				phys_writed((table.block.base<<12)+(lin_page & 0x3ff)*4,entry.load);
+				phys_write<uint32_t>((table.block.base<<12)+(lin_page & 0x3ff)*4,entry.load);
 			}
 			phys_page=entry.block.base;
 		} else {
 			if (lin_page<LINK_START) phys_page=paging.firstmb[lin_page];
 			else phys_page=lin_page;
 		}
-		PAGING_LinkPage(lin_page,phys_page);
+		paging.LinkPage(lin_page, phys_page);
 	}
 };
 
-
-bool PAGING_MakePhysPage(Bitu & page) {
-	if (paging.enabled) {
-		Bitu d_index=page >> 10;
-		Bitu t_index=page & 0x3ff;
+bool PagingBlock::MakePhysPage(Bitu & page) {
+	if (enabled) {
+		Bitu d_index = page >> 10;
+		Bitu t_index = page & 0x3ff;
 		X86PageEntry table;
-		table.load=phys_readd((paging.base.page<<12)+d_index*4);
+		table.load = phys_read<uint32_t>((base.page << 12) + d_index * 4);
 		if (!table.block.p) return false;
 		X86PageEntry entry;
-		entry.load=phys_readd((table.block.base<<12)+t_index*4);
+		entry.load = phys_read<uint32_t>((table.block.base << 12) + t_index * 4);
 		if (!entry.block.p) return false;
-		page=entry.block.base;
+		page = entry.block.base;
 	} else {
-		if (page<LINK_START) page=paging.firstmb[page];
+		if (page < LINK_START) page = firstmb[page];
 		//Else keep it the same
 	}
 	return true;
@@ -625,25 +624,24 @@ bool PAGING_MakePhysPage(Bitu & page) {
 static InitPageHandler init_page_handler;
 static InitPageUserROHandler init_page_handler_userro;
 
-
-Bitu PAGING_GetDirBase(void) {
-	return paging.cr3;
+Bitu PagingBlock::GetDirBase()
+{
+	return cr3;
 }
 
 bool PAGING_ForcePageInit(Bitu lin_addr) {
-	PageHandler * handler=get_tlb_readhandler(lin_addr);
+	PageHandler * handler = paging.get_tlb_handler<true>(lin_addr);
 	if (handler==&init_page_handler) {
 		init_page_handler.InitPageForced(lin_addr);
 		return true;
 	} else if (handler==&init_page_handler_userro) {
-		PAGING_UnlinkPages(lin_addr>>12,1);
+		paging.UnlinkPages(lin_addr >> 12, 1);
 		init_page_handler_userro.InitPageForced(lin_addr);
 		return true;
 	}
 	return false;
 }
 
-#if defined(USE_FULL_TLB)
 void PAGING_InitTLB(void) {
 	for (Bitu i=0;i<TLB_SIZE;i++) {
 		paging.tlb.read[i]=0;
@@ -654,221 +652,98 @@ void PAGING_InitTLB(void) {
 	paging.links.used=0;
 }
 
-void PAGING_ClearTLB(void) {
-	Bit32u * entries=&paging.links.entries[0];
-	for (;paging.links.used>0;paging.links.used--) {
-		Bitu page=*entries++;
-		paging.tlb.read[page]=0;
-		paging.tlb.write[page]=0;
-		paging.tlb.readhandler[page]=&init_page_handler;
-		paging.tlb.writehandler[page]=&init_page_handler;
+void PagingBlock::clearTLB()
+{
+	Bit32u * entries = &links.entries[0];
+	for (;links.used > 0; links.used--) {
+		Bitu page = *entries++;
+		tlb.read[page] = 0;
+		tlb.write[page] = 0;
+		tlb.readhandler[page] = &init_page_handler;
+		tlb.writehandler[page] = &init_page_handler;
 	}
-	paging.links.used=0;
+	links.used = 0;
 }
 
-void PAGING_UnlinkPages(Bitu lin_page,Bitu pages) {
-	for (;pages>0;pages--) {
-		paging.tlb.read[lin_page]=0;
-		paging.tlb.write[lin_page]=0;
-		paging.tlb.readhandler[lin_page]=&init_page_handler;
-		paging.tlb.writehandler[lin_page]=&init_page_handler;
+void PagingBlock::UnlinkPages(Bitu lin_page,Bitu pages) {
+	for (; pages > 0; pages--) {
+		tlb.read[lin_page] = 0;
+		tlb.write[lin_page] = 0;
+		tlb.readhandler[lin_page] = &init_page_handler;
+		tlb.writehandler[lin_page] = &init_page_handler;
 		lin_page++;
 	}
 }
 
-void PAGING_MapPage(Bitu lin_page,Bitu phys_page) {
-	if (lin_page<LINK_START) {
-		paging.firstmb[lin_page]=phys_page;
-		paging.tlb.read[lin_page]=0;
-		paging.tlb.write[lin_page]=0;
-		paging.tlb.readhandler[lin_page]=&init_page_handler;
-		paging.tlb.writehandler[lin_page]=&init_page_handler;
+void PagingBlock::MapPage(Bitu lin_page,Bitu phys_page) {
+	if (lin_page < LINK_START) {
+		firstmb[lin_page] = phys_page;
+		tlb.read[lin_page] = 0;
+		tlb.write[lin_page] = 0;
+		tlb.readhandler[lin_page] = &init_page_handler;
+		tlb.writehandler[lin_page] = &init_page_handler;
 	} else {
-		PAGING_LinkPage(lin_page,phys_page);
+		LinkPage(lin_page, phys_page);
 	}
 }
 
-void PAGING_LinkPage(Bitu lin_page,Bitu phys_page) {
-	PageHandler * handler=MEM_GetPageHandler(phys_page);
-	Bitu lin_base=lin_page << 12;
-	if (lin_page>=TLB_SIZE || phys_page>=TLB_SIZE) 
+void PagingBlock::LinkPage(Bitu lin_page, Bitu phys_page, bool readOnly)
+{
+	PageHandler * handler = MEM_GetPageHandler(phys_page);
+	Bitu lin_base = lin_page << 12;
+	if (lin_page >= TLB_SIZE || phys_page >= TLB_SIZE) 
 		E_Exit("Illegal page");
 
-	if (paging.links.used >= PAGING_LINKS) {
+	if (links.used >= PAGING_LINKS) {
 		LOG(LOG_PAGING,LOG_NORMAL)("Not enough paging links, resetting cache");
-		PAGING_ClearTLB();
-		assert(paging.links.used == 0);
+		clearTLB();
+		assert(links.used == 0);
 	}
 
-	paging.tlb.phys_page[lin_page]=phys_page;
-	if (handler->flags & PFLAG_READABLE) paging.tlb.read[lin_page]=handler->GetHostReadPt(phys_page)-lin_base;
-	else paging.tlb.read[lin_page]=0;
-	if (handler->flags & PFLAG_WRITEABLE) paging.tlb.write[lin_page]=handler->GetHostWritePt(phys_page)-lin_base;
-	else paging.tlb.write[lin_page]=0;
+	tlb.phys_page[lin_page] = phys_page;
+	tlb.read[lin_page] = (handler->flags & PFLAG_READABLE) ?
+		handler->GetHostReadPt(phys_page) - lin_base : 0;
+	tlb.write[lin_page] = (!readOnly && (handler->flags & PFLAG_WRITEABLE)) ? 
+	    handler->GetHostWritePt(phys_page) - lin_base : 0;
 
-	paging.links.entries[paging.links.used++]=lin_page;
-	paging.tlb.readhandler[lin_page]=handler;
-	paging.tlb.writehandler[lin_page]=handler;
+	links.entries[links.used++] = lin_page;
+	tlb.readhandler[lin_page] = handler;
+	tlb.writehandler[lin_page] = (readOnly) ? &init_page_handler_userro : handler;
 }
 
-void PAGING_LinkPage_ReadOnly(Bitu lin_page,Bitu phys_page) {
-	PageHandler * handler=MEM_GetPageHandler(phys_page);
-	Bitu lin_base=lin_page << 12;
-	if (lin_page>=TLB_SIZE || phys_page>=TLB_SIZE) 
-		E_Exit("Illegal page");
-
-	if (paging.links.used >= PAGING_LINKS) {
-		LOG(LOG_PAGING,LOG_NORMAL)("Not enough paging links, resetting cache");
-		PAGING_ClearTLB();
-		assert(paging.links.used == 0);
-	}
-
-	paging.tlb.phys_page[lin_page]=phys_page;
-	if (handler->flags & PFLAG_READABLE) paging.tlb.read[lin_page]=handler->GetHostReadPt(phys_page)-lin_base;
-	else paging.tlb.read[lin_page]=0;
-	paging.tlb.write[lin_page]=0;
-
-	paging.links.entries[paging.links.used++]=lin_page;
-	paging.tlb.readhandler[lin_page]=handler;
-	paging.tlb.writehandler[lin_page]=&init_page_handler_userro;
-}
-
-#else
-
-static inline void InitTLBInt(tlb_entry *bank) {
- 	for (Bitu i=0;i<TLB_SIZE;i++) {
-		bank[i].read=0;
-		bank[i].write=0;
-		bank[i].readhandler=&init_page_handler;
-		bank[i].writehandler=&init_page_handler;
- 	}
-}
-
-void PAGING_InitTLBBank(tlb_entry **bank) {
-	*bank = (tlb_entry *)malloc(sizeof(tlb_entry)*TLB_SIZE);
-	if(!*bank) E_Exit("Out of Memory");
-	InitTLBInt(*bank);
-}
-
-void PAGING_InitTLB(void) {
-	InitTLBInt(paging.tlbh);
- 	paging.links.used=0;
-}
-
-void PAGING_ClearTLB(void) {
-	Bit32u * entries=&paging.links.entries[0];
-	for (;paging.links.used>0;paging.links.used--) {
-		Bitu page=*entries++;
-		tlb_entry *entry = get_tlb_entry(page<<12);
-		entry->read=0;
-		entry->write=0;
-		entry->readhandler=&init_page_handler;
-		entry->writehandler=&init_page_handler;
-	}
-	paging.links.used=0;
-}
-
-void PAGING_UnlinkPages(Bitu lin_page,Bitu pages) {
-	for (;pages>0;pages--) {
-		tlb_entry *entry = get_tlb_entry(lin_page<<12);
-		entry->read=0;
-		entry->write=0;
-		entry->readhandler=&init_page_handler;
-		entry->writehandler=&init_page_handler;
-		lin_page++;
-	}
-}
-
-void PAGING_MapPage(Bitu lin_page,Bitu phys_page) {
-	if (lin_page<LINK_START) {
-		paging.firstmb[lin_page]=phys_page;
-		paging.tlbh[lin_page].read=0;
-		paging.tlbh[lin_page].write=0;
-		paging.tlbh[lin_page].readhandler=&init_page_handler;
-		paging.tlbh[lin_page].writehandler=&init_page_handler;
-	} else {
-		PAGING_LinkPage(lin_page,phys_page);
-	}
-}
-
-void PAGING_LinkPage(Bitu lin_page,Bitu phys_page) {
-	PageHandler * handler=MEM_GetPageHandler(phys_page);
-	Bitu lin_base=lin_page << 12;
-	if (lin_page>=(TLB_SIZE*(TLB_BANKS+1)) || phys_page>=(TLB_SIZE*(TLB_BANKS+1))) 
-		E_Exit("Illegal page");
-
-	if (paging.links.used>=PAGING_LINKS) {
-		LOG(LOG_PAGING,LOG_NORMAL)("Not enough paging links, resetting cache");
-		PAGING_ClearTLB();
-	}
-
-	tlb_entry *entry = get_tlb_entry(lin_base);
-	entry->phys_page=phys_page;
-	if (handler->flags & PFLAG_READABLE) entry->read=handler->GetHostReadPt(phys_page)-lin_base;
-	else entry->read=0;
-	if (handler->flags & PFLAG_WRITEABLE) entry->write=handler->GetHostWritePt(phys_page)-lin_base;
-	else entry->write=0;
-
- 	paging.links.entries[paging.links.used++]=lin_page;
-	entry->readhandler=handler;
-	entry->writehandler=handler;
-}
-
-void PAGING_LinkPage_ReadOnly(Bitu lin_page,Bitu phys_page) {
-	PageHandler * handler=MEM_GetPageHandler(phys_page);
-	Bitu lin_base=lin_page << 12;
-	if (lin_page>=(TLB_SIZE*(TLB_BANKS+1)) || phys_page>=(TLB_SIZE*(TLB_BANKS+1))) 
-		E_Exit("Illegal page");
-
-	if (paging.links.used>=PAGING_LINKS) {
-		LOG(LOG_PAGING,LOG_NORMAL)("Not enough paging links, resetting cache");
-		PAGING_ClearTLB();
-	}
-
-	tlb_entry *entry = get_tlb_entry(lin_base);
-	entry->phys_page=phys_page;
-	if (handler->flags & PFLAG_READABLE) entry->read=handler->GetHostReadPt(phys_page)-lin_base;
-	else entry->read=0;
-	entry->write=0;
-
- 	paging.links.entries[paging.links.used++]=lin_page;
-	entry->readhandler=handler;
-	entry->writehandler=&init_page_handler_userro;
-}
-
-#endif
-
-
-void PAGING_SetDirBase(Bitu cr3) {
-	paging.cr3=cr3;
+void PagingBlock::SetDirBase(Bitu cr3) 
+{
+	this->cr3 = cr3;
 	
-	paging.base.page=cr3 >> 12;
-	paging.base.addr=cr3 & ~4095;
-//	LOG(LOG_PAGING,LOG_NORMAL)("CR3:%X Base %X",cr3,paging.base.page);
-	if (paging.enabled) {
-		PAGING_ClearTLB();
+	base.page = cr3 >> 12;
+	base.addr = cr3 & ~4095;
+//	LOG(LOG_PAGING,LOG_NORMAL)("CR3:%X Base %X",cr3,base.page);
+	if (enabled) {
+		clearTLB();
 	}
 }
 
-void PAGING_Enable(bool enabled) {
+void PagingBlock::Enable(bool enabled)
+{
 	/* If paging is disabled, we work from a default paging table */
-	if (paging.enabled==enabled) return;
-	paging.enabled=enabled;
+	if (this->enabled == enabled) return;
+	this->enabled = enabled;
 	if (enabled) {
-		if (GCC_UNLIKELY(cpudecoder==CPU_Core_Simple_Run)) {
+		if (GCC_UNLIKELY(cpudecoder == CPU_Core_Simple_Run)) {
 //			LOG_MSG("CPU core simple won't run this game,switching to normal");
-			cpudecoder=CPU_Core_Normal_Run;
-			CPU_CycleLeft+=CPU_Cycles;
-			CPU_Cycles=0;
+			cpudecoder = CPU_Core_Normal_Run;
+			CPU_CycleLeft += CPU_Cycles;
+			CPU_Cycles = 0;
 		}
 //		LOG(LOG_PAGING,LOG_NORMAL)("Enabled");
-		PAGING_SetDirBase(paging.cr3);
+		SetDirBase(cr3);
 	}
-	PAGING_ClearTLB();
+	clearTLB();
 }
 
-bool PAGING_Enabled(void) {
-	return paging.enabled;
+bool PagingBlock::Enabled()
+{
+	return enabled;
 }
 
 class PAGING final : public Module_base{

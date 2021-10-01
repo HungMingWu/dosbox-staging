@@ -186,7 +186,7 @@ static Bitu DOS_21Handler(void) {
 		break;
 	case 0x03:		/* Read character from STDAUX */
 		{
-			Bit16u port = real_readw(0x40,0);
+			Bit16u port = real_read<uint16_t>(0x40,0);
 			if(port!=0 && serialports[0]) {
 				Bit8u status;
 				// RTS/DTR on
@@ -197,7 +197,7 @@ static Bitu DOS_21Handler(void) {
 		break;
 	case 0x04:		/* Write Character to STDAUX */
 		{
-			Bit16u port = real_readw(0x40,0);
+			Bit16u port = real_read<uint16_t>(0x40,0);
 			if(port!=0 && serialports[0]) {
 				// RTS/DTR on
 				IO_WriteB(port+4,0x3);
@@ -580,8 +580,8 @@ static Bitu DOS_21Handler(void) {
 		reg_bx=DOS_SDA_OFS + 0x01;
 		break;
 	case 0x35:		/* Get interrupt vector */
-		reg_bx=real_readw(0,((Bit16u)reg_al)*4);
-		SegSet16(es,real_readw(0,((Bit16u)reg_al)*4+2));
+		reg_bx=real_read<uint16_t>(0,((Bit16u)reg_al)*4);
+		SegSet16(es,real_read<uint16_t>(0,((Bit16u)reg_al)*4+2));
 		break;
 	case 0x36:		/* Get Free Disk Space */
 		{

@@ -100,9 +100,9 @@
 #define VGAMEM_CTEXT 0xB800
 #define VGAMEM_MTEXT 0xB000
 
-#define BIOS_NCOLS Bit16u ncols=real_readw(BIOSMEM_SEG,BIOSMEM_NB_COLS);
-#define BIOS_NROWS Bit16u nrows=IS_EGAVGA_ARCH?((Bit16u)real_readb(BIOSMEM_SEG,BIOSMEM_NB_ROWS)+1):25;
-#define BIOS_CHEIGHT Bit8u cheight=IS_EGAVGA_ARCH?real_readb(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT):8;
+#define BIOS_NCOLS Bit16u ncols=real_read<uint16_t>(BIOSMEM_SEG,BIOSMEM_NB_COLS);
+#define BIOS_NROWS Bit16u nrows=IS_EGAVGA_ARCH?((Bit16u)real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_NB_ROWS)+1):25;
+#define BIOS_CHEIGHT Bit8u cheight=IS_EGAVGA_ARCH?real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT):8;
 
 uint16_t INT10_GetTextColumns();
 uint16_t INT10_GetTextRows();
@@ -170,11 +170,11 @@ struct Int10Data {
 extern Int10Data int10;
 
 static inline Bit8u CURSOR_POS_COL(Bit8u page) {
-	return real_readb(BIOSMEM_SEG,BIOSMEM_CURSOR_POS+page*2);
+	return real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURSOR_POS+page*2);
 }
 
 static inline Bit8u CURSOR_POS_ROW(Bit8u page) {
-	return real_readb(BIOSMEM_SEG,BIOSMEM_CURSOR_POS+page*2+1);
+	return real_read<uint8_t>(BIOSMEM_SEG,BIOSMEM_CURSOR_POS+page*2+1);
 }
 
 bool INT10_SetVideoMode(Bit16u mode);

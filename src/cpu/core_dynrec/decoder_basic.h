@@ -696,7 +696,7 @@ bool DRC_CALL_CONV mem_readb_checked_drc(PhysPt address) DRC_FC;
 bool DRC_CALL_CONV mem_readb_checked_drc(PhysPt address) {
 	HostPt tlb_addr=get_tlb_read(address);
 	if (tlb_addr) {
-		const uint8_t byte = host_readb(tlb_addr + address);
+		const uint8_t byte = host_read<Bit8u>(tlb_addr + address);
 		memcpy(&core_dynrec.readdata, &byte, sizeof(byte));
 		return false;
 	} else {
@@ -709,7 +709,7 @@ bool DRC_CALL_CONV mem_readw_checked_drc(PhysPt address) {
 	if ((address & 0xfff)<0xfff) {
 		HostPt tlb_addr=get_tlb_read(address);
 		if (tlb_addr) {
-			const uint16_t word = host_readw(tlb_addr + address);
+			const uint16_t word = host_read<uint16_t>(tlb_addr + address);
 			memcpy(&core_dynrec.readdata, &word, sizeof(word));
 			return false;
 		} else return get_tlb_readhandler(address)->readw_checked(address, (Bit16u*)(&core_dynrec.readdata));
@@ -721,7 +721,7 @@ bool DRC_CALL_CONV mem_readd_checked_drc(PhysPt address) {
 	if ((address & 0xfff)<0xffd) {
 		HostPt tlb_addr=get_tlb_read(address);
 		if (tlb_addr) {
-			const uint32_t dword = host_readd(tlb_addr + address);
+			const uint32_t dword = host_read<uint32_t>(tlb_addr + address);
 			memcpy(&core_dynrec.readdata, &dword, sizeof(dword));
 			return false;
 		} else return get_tlb_readhandler(address)->readd_checked(address, (Bit32u*)(&core_dynrec.readdata));
@@ -733,7 +733,7 @@ bool DRC_CALL_CONV mem_writeb_checked_drc(PhysPt address, Bit8u val)
 {
 	HostPt tlb_addr = get_tlb_write(address);
 	if (tlb_addr) {
-		host_writeb(tlb_addr + address, val);
+		host_write<uint8_t>(tlb_addr + address, val);
 		return false;
 	} else {
 		return get_tlb_writehandler(address)->writeb_checked(address, val);
@@ -745,7 +745,7 @@ bool DRC_CALL_CONV mem_writew_checked_drc(PhysPt address,Bit16u val) {
 	if ((address & 0xfff)<0xfff) {
 		HostPt tlb_addr=get_tlb_write(address);
 		if (tlb_addr) {
-			host_writew(tlb_addr+address,val);
+			host_write<uint16_t>(tlb_addr+address,val);
 			return false;
 		} else return get_tlb_writehandler(address)->writew_checked(address,val);
 	} else return mem_unalignedwritew_checked(address,val);
@@ -756,7 +756,7 @@ bool DRC_CALL_CONV mem_writed_checked_drc(PhysPt address,Bit32u val) {
 	if ((address & 0xfff)<0xffd) {
 		HostPt tlb_addr=get_tlb_write(address);
 		if (tlb_addr) {
-			host_writed(tlb_addr+address,val);
+			host_write<uint32_t>(tlb_addr+address,val);
 			return false;
 		} else return get_tlb_writehandler(address)->writed_checked(address,val);
 	} else return mem_unalignedwrited_checked(address,val);
