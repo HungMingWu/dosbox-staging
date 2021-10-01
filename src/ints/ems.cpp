@@ -307,8 +307,8 @@ static Bit8u EMM_MapPage(Bitu phys_page,Bit16u handle,Bit16u log_page) {
 		emm_mappings[phys_page].handle=NULL_HANDLE;
 		emm_mappings[phys_page].page=NULL_PAGE;
 		for (Bitu i=0;i<4;i++)
-			PAGING_MapPage(EMM_PAGEFRAME4K+phys_page*4+i,EMM_PAGEFRAME4K+phys_page*4+i);
-		PAGING_ClearTLB();
+			paging.MapPage(EMM_PAGEFRAME4K+phys_page*4+i,EMM_PAGEFRAME4K+phys_page*4+i);
+		paging.clearTLB();
 		return EMM_NO_ERROR;
 	}
 	/* Check for valid handle */
@@ -321,10 +321,10 @@ static Bit8u EMM_MapPage(Bitu phys_page,Bit16u handle,Bit16u log_page) {
 
 		MemHandle memh=MEM_NextHandleAt(emm_handles[handle].mem,log_page*4);;
 		for (Bitu i=0;i<4;i++) {
-			PAGING_MapPage(EMM_PAGEFRAME4K+phys_page*4+i,memh);
+			paging.MapPage(EMM_PAGEFRAME4K+phys_page*4+i,memh);
 			memh=MEM_NextHandle(memh);
 		}
-		PAGING_ClearTLB();
+		paging.clearTLB();
 		return EMM_NO_ERROR;
 	} else  {
 		/* Illegal logical page it is */
@@ -365,8 +365,8 @@ static Bit8u EMM_MapSegment(Bitu segment,Bit16u handle,Bit16u log_page) {
 				emm_segmentmappings[segment>>10].page=NULL_PAGE;
 			}
 			for (Bitu i=0;i<4;i++)
-				PAGING_MapPage(segment*16/4096+i,segment*16/4096+i);
-			PAGING_ClearTLB();
+				paging.MapPage(segment*16/4096+i,segment*16/4096+i);
+			paging.clearTLB();
 			return EMM_NO_ERROR;
 		}
 		/* Check for valid handle */
@@ -384,10 +384,10 @@ static Bit8u EMM_MapSegment(Bitu segment,Bit16u handle,Bit16u log_page) {
 
 			MemHandle memh=MEM_NextHandleAt(emm_handles[handle].mem,log_page*4);;
 			for (Bitu i=0;i<4;i++) {
-				PAGING_MapPage(segment*16/4096+i,memh);
+				paging.MapPage(segment*16/4096+i,memh);
 				memh=MEM_NextHandle(memh);
 			}
-			PAGING_ClearTLB();
+			paging.clearTLB();
 			return EMM_NO_ERROR;
 		} else  {
 			/* Illegal logical page it is */

@@ -312,7 +312,7 @@ void BOOT::Run(void) {
                     return;
                 }
 
-                PhysPt romseg_pt=host_readw(&rombuf[0x1ce])<<4;
+                PhysPt romseg_pt=host_read<uint16_t>(&rombuf[0x1ce])<<4;
 
                 /* read cartridge data into buffer */
                 fseek(usefile_2, 0x200L, SEEK_SET);
@@ -335,7 +335,7 @@ void BOOT::Run(void) {
                 return;
             }
 
-            Bit16u romseg=host_readw(&rombuf[0x1ce]);
+            Bit16u romseg=host_read<uint16_t>(&rombuf[0x1ce]);
 
             /* read cartridge data into buffer */
             fseek(usefile_1,0x200L, SEEK_SET);

@@ -174,6 +174,6 @@ void DOS_SetupTables(void) {
 	call_casemap = CALLBACK_Allocate();
 	CALLBACK_Setup(call_casemap,DOS_CaseMapFunc,CB_RETF,"DOS CaseMap");
 	/* Add it to country structure */
-	host_writed(country_info + 0x12, CALLBACK_RealPointer(call_casemap));
+	host_write<uint32_t>(country_info + 0x12, CALLBACK_RealPointer(call_casemap));
 	dos.tables.country=country_info;
 }

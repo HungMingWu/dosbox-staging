@@ -460,7 +460,7 @@ bool CPU_SwitchTask(Bitu new_tss_selector,TSwitchType tstype,Bitu old_eip) {
 	} else {
 	
 		/* Setup the new cr3 */
-		PAGING_SetDirBase(new_cr3);
+		paging.SetDirBase(new_cr3);
 
 		/* Load new context */
 		if (new_tss.is386) {
@@ -1575,7 +1575,7 @@ void CPU_SET_CRX(Bitu cr,Bitu value) {
 			if (value & CR0_PROTECTION) {
 				cpu.pmode=true;
 				LOG(LOG_CPU,LOG_NORMAL)("Protected mode");
-				PAGING_Enable((value & CR0_PAGING)>0);
+			    paging.Enable((value & CR0_PAGING) > 0);
 
 				if (!(CPU_AutoDetermineMode&CPU_AUTODETERMINE_MASK)) break;
 
@@ -1607,7 +1607,7 @@ void CPU_SET_CRX(Bitu cr,Bitu value) {
 			} else {
 				cpu.pmode=false;
 				if (value & CR0_PAGING) LOG_MSG("Paging requested without PE=1");
-				PAGING_Enable(false);
+				paging.Enable(false);
 				LOG(LOG_CPU,LOG_NORMAL)("Real mode");
 			}
 			break;
@@ -1616,7 +1616,7 @@ void CPU_SET_CRX(Bitu cr,Bitu value) {
 		paging.cr2=value;
 		break;
 	case 3:
-		PAGING_SetDirBase(value);
+		paging.SetDirBase(value);
 		break;
 	default:
 		LOG(LOG_CPU,LOG_ERROR)("Unhandled MOV CR%d,%X",cr,value);
@@ -1644,7 +1644,7 @@ Bitu CPU_GET_CRX(Bitu cr) {
 	case 2:
 		return paging.cr2;
 	case 3:
-		return PAGING_GetDirBase() & 0xfffff000;
+		return paging.GetDirBase() & 0xfffff000;
 	default:
 		LOG(LOG_CPU,LOG_ERROR)("Unhandled MOV XXX, CR%d",cr);
 		break;

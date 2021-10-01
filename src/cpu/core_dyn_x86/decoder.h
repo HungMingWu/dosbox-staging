@@ -55,20 +55,20 @@ static bool MakeCodePage(Bitu lin_addr,CodePageHandler * &cph) {
 	const Bitu cflag = cpu.code.big ? PFLAG_HASCODE32:PFLAG_HASCODE16;
 	//Ensure page contains memory:
 	if (GCC_UNLIKELY(mem_readb_checked(lin_addr,&rdval))) return true;
-	PageHandler * handler=get_tlb_readhandler(lin_addr);
+	PageHandler * handler = paging.get_tlb_handler<true>(lin_addr);
 	if (handler->flags & PFLAG_HASCODE) {
 		cph=( CodePageHandler *)handler;
 		return false;
 	}
 	if (handler->flags & PFLAG_NOCODE) {
 		if (PAGING_ForcePageInit(lin_addr)) {
-			handler=get_tlb_readhandler(lin_addr);
+			handler = paging.get_tlb_handler<true>(lin_addr);
 			if (handler->flags & PFLAG_HASCODE) {
 				cph=( CodePageHandler *)handler;
 				if (handler->flags & cflag) return false;
 				cph->ClearRelease();
 				cph=0;
-				handler=get_tlb_readhandler(lin_addr);
+				handler = paging.get_tlb_handler<true>(lin_addr);
 			}
 		}
 		if (handler->flags & PFLAG_NOCODE) {
@@ -78,7 +78,7 @@ static bool MakeCodePage(Bitu lin_addr,CodePageHandler * &cph) {
 	} 
 	Bitu lin_page=lin_addr >> 12;
 	Bitu phys_page=lin_page;
-	if (!PAGING_MakePhysPage(phys_page)) {
+	if (!paging.MakePhysPage(phys_page)) {
 		LOG_MSG("DYNX86:Can't find physpage");
 		cph=0;		return false;
 	}
@@ -108,7 +108,7 @@ static bool MakeCodePage(Bitu lin_addr,CodePageHandler * &cph) {
 	if (!cache.used_pages) cache.used_pages=cpagehandler;
 	cpagehandler->SetupAt(phys_page,handler);
 	MEM_SetPageHandler(phys_page,1,cpagehandler);
-	PAGING_UnlinkPages(lin_page,1);
+	paging.UnlinkPages(lin_page, 1);
 	cph=cpagehandler;
 	return false;
 }
@@ -203,7 +203,7 @@ static bool decode_fetchb_imm(Bitu & val) {
 				val=(Bit32u)decode_fetchb();
 				return false;
 			}
-			HostPt tlb_addr=get_tlb_read(decode.code);
+			HostPt tlb_addr = paging.get_tlb<true>(decode.code);
 			if (tlb_addr) {
 				val=(Bitu)(tlb_addr+decode.code);
 				decode_increase_wmapmask(1);
@@ -225,7 +225,7 @@ static bool decode_fetchw_imm(Bitu & val) {
 				val=decode_fetchw();
 				return false;
 			}
-			HostPt tlb_addr=get_tlb_read(decode.code);
+			HostPt tlb_addr = paging.get_tlb<true>(decode.code);
 			if (tlb_addr) {
 				val=(Bitu)(tlb_addr+decode.code);
 				decode_increase_wmapmask(2);
@@ -249,7 +249,7 @@ static bool decode_fetchd_imm(Bitu & val) {
 				val=decode_fetchd();
 				return false;
 			}
-			HostPt tlb_addr=get_tlb_read(decode.code);
+			HostPt tlb_addr = paging.get_tlb<true>(decode.code);
 			if (tlb_addr) {
 				val=(Bitu)(tlb_addr+decode.code);
 				decode_increase_wmapmask(4);
@@ -564,7 +564,7 @@ static bool mem_readd_checked_dcx86(PhysPt address) {
 	if ((address & 0xfff)<0xffd) {
 		HostPt tlb_addr=get_tlb_read(address);
 		if (tlb_addr) {
-			core_dyn.readdata=host_readd(tlb_addr+address);
+			core_dyn.readdata=host_read<uint32_t>(tlb_addr+address);
 			return false;
 		} else {
 			return get_tlb_readhandler(address)->readd_checked(address, (Bit32u*)&core_dyn.readdata);
@@ -576,7 +576,7 @@ static bool mem_readw_checked_dcx86(PhysPt address) {
 	if ((address & 0xfff)<0xfff) {
 		HostPt tlb_addr=get_tlb_read(address);
 		if (tlb_addr) {
-			*(Bit16u*)&core_dyn.readdata=host_readw(tlb_addr+address);
+			*(Bit16u*)&core_dyn.readdata=host_read<uint16_t>(tlb_addr+address);
 			return false;
 		} else {
 			return get_tlb_readhandler(address)->readw_checked(address, (Bit16u*)&core_dyn.readdata);
@@ -755,22 +755,22 @@ static void dyn_write_word(DynReg * addr,DynReg * val,bool dword,bool release=fa
 
 #else // X86_64
 static bool mem_readd_checked_dcx64(PhysPt address, Bit32u* dst) {
-	return get_tlb_readhandler(address)->readd_checked(address, dst);
+	return paging.get_tlb_handler<true>(address)->readd_checked(address, dst);
 }
 static bool mem_readw_checked_dcx64(PhysPt address, Bit16u* dst) {
-	return get_tlb_readhandler(address)->readw_checked(address, dst);
+	return paging.get_tlb_handler<true>(address)->readw_checked(address, dst);
 }
 static bool mem_writed_checked_dcx64(PhysPt address, Bitu val) {
-	return get_tlb_writehandler(address)->writed_checked(address, val);
+	return paging.get_tlb_handler<false>(address)->writed_checked(address, val);
 }
 static bool mem_writew_checked_dcx64(PhysPt address, Bitu val) {
-	return get_tlb_writehandler(address)->writew_checked(address, val);
+	return paging.get_tlb_handler<false>(address)->writew_checked(address, val);
 }
 static bool mem_readb_checked_dcx64(PhysPt address, Bit8u* dst) {
-	return get_tlb_readhandler(address)->readb_checked(address, dst);
+	return paging.get_tlb_handler<true>(address)->readb_checked(address, dst);
 }
 static bool mem_writeb_checked_dcx64(PhysPt address, Bitu val) {
-	return get_tlb_writehandler(address)->writeb_checked(address, val);
+	return paging.get_tlb_handler<false>(address)->writeb_checked(address, val);
 }
 
 static void dyn_read_word(DynReg * addr,DynReg * dst,bool dword,bool release=false) {

@@ -106,18 +106,18 @@ inline void LOADIP() { core.cseip = (MemBase + SegBase(cs) + reg_eip); }
 #define BaseSS		core.base_ss
 
 static INLINE Bit8u Fetchb() {
-	Bit8u temp=host_readb(core.cseip);
+	Bit8u temp=host_read<Bit8u>(core.cseip);
 	core.cseip+=1;
 	return temp;
 }
 
 static INLINE Bit16u Fetchw() {
-	Bit16u temp=host_readw(core.cseip);
+	Bit16u temp=host_read<uint16_t>(core.cseip);
 	core.cseip+=2;
 	return temp;
 }
 static INLINE Bit32u Fetchd() {
-	Bit32u temp=host_readd(core.cseip);
+	Bit32u temp=host_read<uint32_t>(core.cseip);
 	core.cseip+=4;
 	return temp;
 }

@@ -488,7 +488,7 @@ float Voice::Read16BitSample(const ram_array_t &ram, const int32_t addr) const n
 	const auto lower = addr & 0b1100'0000'0000'0000'0000;
 	const auto upper = addr & 0b0001'1111'1111'1111'1111;
 	const auto i = static_cast<size_t>(lower | (upper << 1));
-	return static_cast<int16_t>(host_readw(&ram.at(i)));
+	return static_cast<int16_t>(host_read<uint16_t>(&ram.at(i)));
 }
 
 uint8_t Voice::ReadCtrlState(const VoiceCtrl &ctrl) const noexcept

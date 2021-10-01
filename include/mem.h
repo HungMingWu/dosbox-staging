@@ -60,27 +60,27 @@ MemHandle MEM_NextHandleAt(MemHandle handle, Bitu where);
 
 static inline void var_write(uint8_t *var, uint8_t val)
 {
-	host_writeb(var, val);
+	host_write<uint8_t>(var, val);
 }
 
 static inline void var_write(uint16_t *var, uint16_t val)
 {
-	host_writew((HostPt)var, val);
+	host_write<uint16_t>((HostPt)var, val);
 }
 
 static inline void var_write(uint32_t *var, uint32_t val)
 {
-	host_writed((HostPt)var, val);
+	host_write<uint32_t>((HostPt)var, val);
 }
 
 static inline uint16_t var_read(uint16_t *var)
 {
-	return host_readw((HostPt)var);
+	return host_read<uint16_t>((HostPt)var);
 }
 
 static inline uint32_t var_read(uint32_t *var)
 {
-	return host_readd((HostPt)var);
+	return host_read<uint32_t>((HostPt)var);
 }
 
 /* The Following six functions are slower but they recognize the paged memory
@@ -96,32 +96,32 @@ void mem_writed(PhysPt pt, uint32_t val);
 
 static inline void phys_writeb(PhysPt addr, uint8_t val)
 {
-	host_writeb(MemBase + addr, val);
+	host_write<uint8_t>(MemBase + addr, val);
 }
 
 static inline void phys_writew(PhysPt addr, uint16_t val)
 {
-	host_writew(MemBase + addr, val);
+	host_write<uint16_t>(MemBase + addr, val);
 }
 
 static inline void phys_writed(PhysPt addr, uint32_t val)
 {
-	host_writed(MemBase + addr, val);
+	host_write<uint32_t>(MemBase + addr, val);
 }
 
 static inline uint8_t phys_readb(PhysPt addr)
 {
-	return host_readb(MemBase + addr);
+	return host_read<Bit8u>(MemBase + addr);
 }
 
 static inline uint16_t phys_readw(PhysPt addr)
 {
-	return host_readw(MemBase + addr);
+	return host_read<uint16_t>(MemBase + addr);
 }
 
 static inline uint32_t phys_readd(PhysPt addr)
 {
-	return host_readd(MemBase + addr);
+	return host_read<uint32_t>(MemBase + addr);
 }
 
 /* These don't check for alignment, better be sure it's correct */

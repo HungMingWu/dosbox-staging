@@ -36,7 +36,7 @@
 #include "byteorder.h"
 #include "mem_unaligned.h"
 
-/* Use host_read* functions to replace endian branching and byte swapping code,
+/* Use host_read functions to replace endian branching and byte swapping code,
  * such as:
  *
  *   #ifdef WORDS_BIGENDIAN
@@ -46,31 +46,26 @@
  *   #endif
  */
 
-// Read a single-byte value; provided for backwards-compatibility only.
-constexpr uint8_t host_readb(const uint8_t *arr) noexcept
+template <typename T>
+constexpr T host_read(const uint8_t *arr) noexcept
 {
-	return *arr;
+	if constexpr (sizeof(T) == 1) {
+		// Read a single-byte value; provided for backwards-compatibility only.
+		return *arr;
+	} else if constexpr (sizeof(T) == 2) {
+		// Read a 16-bit word from 8-bit DOS/little-endian byte-ordered memory.
+		return le16_to_host(read_unaligned_uint16(arr));
+	} else if constexpr (sizeof(T) == 4) {
+		// Read a 32-bit double-word from 8-bit DOS/little-endian byte-ordered memory.
+		return le32_to_host(read_unaligned_uint32(arr));
+	} else {
+		// Read a 64-bit quad-word from 8-bit DOS/little-endian byte-ordered memory.
+		return le64_to_host(read_unaligned_uint64(arr));
+	}
+	return T{};
 }
 
-// Read a 16-bit word from 8-bit DOS/little-endian byte-ordered memory.
-static inline uint16_t host_readw(const uint8_t *arr) noexcept
-{
-	return le16_to_host(read_unaligned_uint16(arr));
-}
-
-// Read a 32-bit double-word from 8-bit DOS/little-endian byte-ordered memory.
-static inline uint32_t host_readd(const uint8_t *arr) noexcept
-{
-	return le32_to_host(read_unaligned_uint32(arr));
-}
-
-// Read a 64-bit quad-word from 8-bit DOS/little-endian byte-ordered memory.
-static inline uint64_t host_readq(const uint8_t *arr) noexcept
-{
-	return le64_to_host(read_unaligned_uint64(arr));
-}
-
-/* Use host_read*_at functions to replace endian branching and byte swapping
+/* Use host_read_at functions to replace endian branching and byte swapping
  * code such as:
  *
  *   #ifdef WORDS_BIGENDIAN
@@ -80,28 +75,13 @@ static inline uint64_t host_readq(const uint8_t *arr) noexcept
  *   #endif
  */
 
-// Read an array-indexed 16-bit word from 8-bit DOS/little-endian byte-ordered
-// memory.
-static inline uint16_t host_readw_at(const uint8_t *arr, const uintptr_t idx) noexcept
+template <typename T>
+constexpr T host_read_at(const uint8_t* arr, const uintptr_t idx) noexcept
 {
-	return host_readw(arr + idx * sizeof(uint16_t));
+	return host_read<T>(arr + idx * sizeof(T));
 }
 
-// Read an array-indexed 32-bit double-word from 8-bit DOS/little-endian
-// byte-ordered memory.
-static inline uint32_t host_readd_at(const uint8_t *arr, const uintptr_t idx) noexcept
-{
-	return host_readd(arr + idx * sizeof(uint32_t));
-}
-
-// Read an array-indexed 64-bit quad-word from 8-bit DOS/little-endian
-// byte-ordered memory.
-static inline uint64_t host_readq_at(const uint8_t *arr, const uintptr_t idx) noexcept
-{
-	return host_readq(arr + idx * sizeof(uint64_t));
-}
-
-/* Use host_write* functions to replace endian branching and byte swapping
+/* Use host_write functions to replace endian branching and byte swapping
  * code such as:
  *
  *   #ifdef WORDS_BIGENDIAN
@@ -111,31 +91,25 @@ static inline uint64_t host_readq_at(const uint8_t *arr, const uintptr_t idx) no
  *   #endif
  */
 
-// Write a single-byte value; provided for backwards-compatibility only.
-static inline void host_writeb(uint8_t *arr, const uint8_t val) noexcept
+template <typename T>
+constexpr void host_write(uint8_t *arr, const T val) noexcept
 {
-	*arr = val;
+	if constexpr (sizeof(T) == 1) {
+		// Write a single-byte value; provided for backwards-compatibility only.
+		*arr = val;
+	} else if constexpr (sizeof(T) == 2) {
+		// Write a 16-bit word to 8-bit memory using DOS/little-endian byte-ordering.
+		write_unaligned_uint16(arr, host_to_le16(val));
+	} else if constexpr (sizeof(T) == 4) {
+		// Write a 32-bit double-word to 8-bit memory using DOS/little-endian byte-ordering.
+		write_unaligned_uint32(arr, host_to_le32(val));
+	} else {
+		// Write a 64-bit quad-word to 8-bit memory using DOS/little-endian byte-ordering.
+		write_unaligned_uint64(arr, host_to_le64(val));
+	}
 }
 
-// Write a 16-bit word to 8-bit memory using DOS/little-endian byte-ordering.
-static inline void host_writew(uint8_t *arr, const uint16_t val) noexcept
-{
-	write_unaligned_uint16(arr, host_to_le16(val));
-}
-
-// Write a 32-bit double-word to 8-bit memory using DOS/little-endian byte-ordering.
-static inline void host_writed(uint8_t *arr, const uint32_t val) noexcept
-{
-	write_unaligned_uint32(arr, host_to_le32(val));
-}
-
-// Write a 64-bit quad-word to 8-bit memory using DOS/little-endian byte-ordering.
-static inline void host_writeq(uint8_t *arr, const uint64_t val) noexcept
-{
-	write_unaligned_uint64(arr, host_to_le64(val));
-}
-
-/* Use host_write*_at functions to replace endian branching and byte swapping
+/* Use host_write_at functions to replace endian branching and byte swapping
  * code such as:
  *
  *   #ifdef WORDS_BIGENDIAN
@@ -145,34 +119,13 @@ static inline void host_writeq(uint8_t *arr, const uint64_t val) noexcept
  *   #endif
  */
 
-// Write a 16-bit array-indexed word to 8-bit memory using DOS/little-endian
-// byte-ordering.
-static inline void host_writew_at(uint8_t *arr,
-                                  const uintptr_t idx,
-                                  const uint16_t val) noexcept
+template <typename T>
+constexpr void host_write_at(uint8_t *arr, const uintptr_t idx, const T val) noexcept
 {
-	host_writew(arr + idx * sizeof(uint16_t), val);
+	return host_write<T>(arr + idx * sizeof(T), val);
 }
 
-// Write a 32-bit array-indexed double-word to 8-bit memory using
-// DOS/little-endian byte-ordering.
-static inline void host_writed_at(uint8_t *arr,
-                                  const uintptr_t idx,
-                                  const uint32_t val) noexcept
-{
-	host_writed(arr + idx * sizeof(uint32_t), val);
-}
-
-// Write a 64-bit array-indexed quad-word to 8-bit memory using
-// DOS/little-endian byte-ordering.
-static inline void host_writeq_at(uint8_t *arr,
-                                  const uintptr_t idx,
-                                  const uint64_t val) noexcept
-{
-	host_writeq(arr + idx * sizeof(uint64_t), val);
-}
-
-/* Use host_add* functions to replace endian branching and byte swapping
+/* Use host_add functions to replace endian branching and byte swapping
  * code such as:
  *
  *   #ifdef WORDS_BIGENDIAN
@@ -182,26 +135,13 @@ static inline void host_writeq_at(uint8_t *arr,
  *   #endif
  */
 
-// Add to a 16-bit word stored in 8-bit DOS/little-endian byte-ordered memory.
-static inline void host_addw(uint8_t *arr, const uint16_t val) noexcept
+template <typename T>
+static inline void host_add(uint8_t *arr, const T val) noexcept
 {
-	host_writew(arr, host_readw(arr) + val);
+	host_write<T>(arr, host_read<T>(arr) + val);
 }
 
-// Add to a 32-bit double-word stored in 8-bit DOS/little-endian byte-ordered
-// memory.
-static inline void host_addd(uint8_t *arr, const uint32_t val) noexcept
-{
-	host_writed(arr, host_readd(arr) + val);
-}
-
-// Add to a 64-bit quad-word stored in 8-bit DOS/little-endian byte-ordered memory.
-static inline void host_addq(uint8_t *arr, const uint64_t val) noexcept
-{
-	host_writeq(arr, host_readq(arr) + val);
-}
-
-/* Use host_inc* functions to replace endian branching and byte swapping
+/* Use host_inc functions to replace endian branching and byte swapping
  * code such as:
  *
  *   #ifdef WORDS_BIGENDIAN
@@ -211,24 +151,10 @@ static inline void host_addq(uint8_t *arr, const uint64_t val) noexcept
  *   #endif
  */
 
-// Increment a 16-bit word stored in 8-bit DOS/little-endian byte-ordered memory.
-static inline void host_incw(uint8_t *arr) noexcept
+template <typename T>
+static inline void host_inc(uint8_t *arr) noexcept
 {
-	host_writew(arr, host_readw(arr) + 1);
-}
-
-// Increment a 32-bit double-word stored in 8-bit DOS/little-endian byte-ordered
-// memory.
-static inline void host_incd(uint8_t *arr) noexcept
-{
-	host_writed(arr, host_readd(arr) + 1);
-}
-
-// Increment a 64-bit quad-word stored in 8-bit DOS/little-endian byte-ordered
-// memory.
-static inline void host_incq(uint8_t *arr) noexcept
-{
-	host_writeq(arr, host_readq(arr) + 1);
+	host_write<T>(arr, host_read<T>(arr) + 1);
 }
 
 #endif
